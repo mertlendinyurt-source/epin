@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { User, Check, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Toaster } from '@/components/ui/sonner'
@@ -272,7 +272,7 @@ export default function App() {
               </div>
 
               {playerName && (
-                <div className="px-3 py-2.5 rounded" style={{ backgroundColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <div className="px-3 py-2.5 rounded" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                   <div className="flex items-center gap-1.5 text-green-400 mb-0.5 text-xs font-semibold">
                     <Check className="w-3.5 h-3.5" />
                     <span>Oyuncu Bulundu</span>
