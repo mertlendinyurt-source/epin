@@ -94,12 +94,14 @@ export default function App() {
   }, [playerId])
 
   const handleCheckout = async () => {
+    // If player ID not valid, open Player ID modal
     if (!playerValid || !playerName) {
-      setOrderProcessing(true)
-      setTimeout(() => setOrderProcessing(false), 2000)
+      setPlayerIdModalOpen(true)
+      setPlayerIdError('')
       return
     }
 
+    // Proceed with payment
     setOrderProcessing(true)
     try {
       const response = await fetch('/api/orders', {
@@ -124,6 +126,44 @@ export default function App() {
       toast.error('Sipariş oluşturulurken hata oluştu')
     } finally {
       setOrderProcessing(false)
+    }
+  }
+
+  const handlePlayerIdConfirm = async () => {
+    if (!playerId || playerId.length < 6) {
+      setPlayerIdError('Lütfen geçerli bir Oyuncu ID girin')
+      return
+    }
+
+    // Validate player ID
+    setPlayerLoading(true)
+    setPlayerIdError('')
+    
+    try {
+      const response = await fetch(`/api/player/resolve?id=${playerId}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setPlayerName(data.data.playerName)
+        setPlayerValid(true)
+        setPlayerIdModalOpen(false)
+        toast.success('Oyuncu bulundu! Ödemeye devam edebilirsiniz.')
+        // Auto proceed to payment
+        setTimeout(() => {
+          handleCheckout()
+        }, 500)
+      } else {
+        setPlayerIdError(data.error || 'Oyuncu bulunamadı')
+        setPlayerName('')
+        setPlayerValid(false)
+      }
+    } catch (error) {
+      console.error('Error resolving player:', error)
+      setPlayerIdError('Oyuncu adı alınırken hata oluştu')
+      setPlayerName('')
+      setPlayerValid(false)
+    } finally {
+      setPlayerLoading(false)
     }
   }
 
