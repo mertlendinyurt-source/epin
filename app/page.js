@@ -236,33 +236,27 @@ export default function App() {
               </div>
             ))}
           </div>
-        )}
       </main>
 
-      {/* Checkout Dialog */}
+      {/* Checkout Dialog - Plyr style */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="bg-zinc-950 border border-white/10 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Siparişi Tamamla</DialogTitle>
-            <DialogDescription className="text-white/50">
-              Oyuncu bilgilerinizi girin
-            </DialogDescription>
+        <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden" style={{ backgroundColor: '#1F232A', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <DialogHeader className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <DialogTitle className="text-lg font-bold text-white uppercase tracking-wide">ÖDEME TÜRÜNÜ SEÇİN</DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-            {/* Left: Player Info */}
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-white/5">
+            {/* Left: Player Info & Payment Methods */}
+            <div className="p-5 space-y-5">
               <div>
-                <Label htmlFor="playerId" className="text-white/70 mb-2 block text-sm">
-                  Oyuncu ID
-                </Label>
+                <Label className="text-xs text-white/60 mb-2 block uppercase tracking-wide">Oyuncu ID</Label>
                 <div className="relative">
                   <Input
-                    id="playerId"
-                    placeholder="Oyuncu ID'nizi girin"
+                    placeholder="Oyuncu ID Girin"
                     value={playerId}
                     onChange={(e) => setPlayerId(e.target.value)}
-                    className="bg-zinc-900 border-white/10 text-white placeholder:text-white/30 pr-10 focus:border-blue-500"
+                    className="h-10 px-3 text-sm text-white placeholder:text-white/30 border-white/10 focus:border-blue-500"
+                    style={{ backgroundColor: '#12161D' }}
                   />
                   {playerLoading && (
                     <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
@@ -277,91 +271,109 @@ export default function App() {
               </div>
 
               {playerName && (
-                <div className="p-4 rounded bg-green-500/10 border border-green-500/20">
-                  <div className="flex items-center gap-2 text-green-400 mb-1 text-sm">
-                    <Check className="w-4 h-4" />
-                    <span className="font-semibold">Oyuncu Bulundu</span>
+                <div className="px-3 py-2.5 rounded" style={{ backgroundColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  <div className="flex items-center gap-1.5 text-green-400 mb-0.5 text-xs font-semibold">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Oyuncu Bulundu</span>
                   </div>
-                  <p className="text-white font-bold">{playerName}</p>
+                  <p className="text-white text-sm font-bold">{playerName}</p>
                 </div>
               )}
+
+              <div>
+                <Label className="text-xs text-white/60 mb-3 block uppercase tracking-wide">Ödeme yöntemleri</Label>
+                <div className="space-y-2.5">
+                  <div className="px-4 py-3 rounded flex items-center justify-between cursor-pointer" style={{ backgroundColor: '#12161D', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-8 rounded flex items-center justify-center" style={{ backgroundColor: '#1F232A' }}>
+                        💳
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white">Kredi / Banka Kartı</div>
+                        <div className="text-xs text-white/50">Anında teslimat</div>
+                      </div>
+                    </div>
+                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Right: Order Summary */}
             {selectedProduct && (
-              <div className="space-y-4">
-                <div className="p-4 rounded bg-zinc-900 border border-white/10">
-                  <h3 className="font-semibold mb-3 text-white text-sm">Sipariş Özeti</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/50">Ürün</span>
-                      <span className="text-white font-semibold">{selectedProduct.title}</span>
+              <div className="p-5 space-y-4">
+                <div>
+                  <Label className="text-xs text-white/60 mb-3 block uppercase tracking-wide">Ürün</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded flex items-center justify-center" style={{ backgroundColor: '#12161D' }}>
+                      <img 
+                        src="https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=100&h=100&fit=crop"
+                        alt="UC"
+                        className="w-8 h-8 object-contain opacity-70"
+                      />
                     </div>
-                    {selectedProduct.discountPrice < selectedProduct.price && (
-                      <>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/50">Liste Fiyatı</span>
-                          <span className="text-white/30 line-through">{selectedProduct.price.toFixed(2)} ₺</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-green-400">İndirim</span>
-                          <span className="text-green-400">-{(selectedProduct.price - selectedProduct.discountPrice).toFixed(2)} ₺</span>
-                        </div>
-                      </>
-                    )}
-                    <div className="border-t border-white/10 pt-2 mt-2">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-semibold text-white">Toplam</span>
-                        <span className="font-black text-2xl text-white">
-                          {selectedProduct.discountPrice.toFixed(2)} ₺
-                        </span>
+                    <div>
+                      <div className="text-sm font-bold text-white">{product.title}</div>
+                      <div className="text-xs text-white/50 flex items-center gap-1.5">
+                        🇹🇷 TÜRKİYE
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2 text-xs text-white/40 p-3 rounded bg-blue-500/5 border border-blue-500/10">
-                  <Zap className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <p>
-                    UC'ler ödeme onayından sonra 5-10 dakika içinde hesabınıza yüklenecektir.
-                  </p>
+                <div>
+                  <Label className="text-xs text-white/60 mb-2 block uppercase tracking-wide">Fiyat detayları</Label>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/60">Orjinal Fiyat</span>
+                      <span className="text-white/80">₺ {selectedProduct.price.toFixed(2)}</span>
+                    </div>
+                    {selectedProduct.discountPrice < selectedProduct.price && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-400 font-semibold">Size Özel Fiyat</span>
+                        <span className="text-green-400 font-semibold">₺ {selectedProduct.discountPrice.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex justify-between items-baseline mb-4">
+                    <span className="text-sm text-white/60 uppercase tracking-wide">Ödenecek Tutar</span>
+                    <span className="text-2xl font-black text-green-400">
+                      ₺ {selectedProduct.discountPrice.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <Button
+                    onClick={handleCheckout}
+                    disabled={!playerValid || orderProcessing}
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase tracking-wide"
+                  >
+                    {orderProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        İşleniyor...
+                      </>
+                    ) : (
+                      'Ödemeye Git'
+                    )}
+                  </Button>
                 </div>
               </div>
             )}
           </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCheckoutOpen(false)}
-              className="border-white/10 text-white hover:bg-white/5"
-            >
-              İptal
-            </Button>
-            <Button
-              onClick={handleCheckout}
-              disabled={!playerValid || orderProcessing}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold"
-            >
-              {orderProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  İşleniyor...
-                </>
-              ) : (
-                'Ödemeye Git'
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 bg-black mt-32">
-        <div className="max-w-[1400px] mx-auto px-6 py-12">
-          <div className="text-center text-white/30 text-sm">
+      <footer className="mt-24 py-6" style={{ borderTop: '1px solid rgba(255,255,255,0.03)', backgroundColor: '#12161D' }}>
+        <div className="max-w-[1400px] mx-auto px-4">
+          <div className="text-center text-white/30 text-xs">
             <p>© 2024 PUBG UC Store. Tüm hakları saklıdır.</p>
-            <p className="mt-2 text-xs text-white/20">
+            <p className="mt-1.5 text-white/20 text-[11px]">
               Bu site PUBG Mobile ile resmi bir bağlantısı yoktur.
             </p>
           </div>
