@@ -315,7 +315,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white">{product.title}</div>
+                      <div className="text-sm font-bold text-white">{selectedProduct.title}</div>
                       <div className="text-xs text-white/50 flex items-center gap-1.5">
                         🇹🇷 TÜRKİYE
                       </div>
