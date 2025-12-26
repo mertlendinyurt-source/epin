@@ -954,7 +954,85 @@ export async function POST(request) {
         createdAt: new Date()
       });
 
-      // 11. Log successful callback for audit
+      // 11. AUTO-ASSIGN STOCK (if PAID and not already assigned)
+      if (newStatus === 'paid') {
+        // Check if stock already assigned (idempotency)
+        const currentOrder = await db.collection('orders').findOne({ id: order.id });
+        
+        if (!currentOrder.delivery || !currentOrder.delivery.items || currentOrder.delivery.items.length === 0) {
+          try {
+            // Find available stock for this product (atomic operation)
+            const availableStock = await db.collection('stock').findOneAndUpdate(
+              { 
+                productId: order.productId, 
+                status: 'available' 
+              },
+              { 
+                $set: { 
+                  status: 'assigned', 
+                  orderId: order.id,
+                  assignedAt: new Date()
+                } 
+              },
+              { 
+                returnDocument: 'after',
+                sort: { createdAt: 1 } // FIFO - First stock in, first assigned
+              }
+            );
+
+            if (availableStock.value) {
+              // Stock found and assigned - update order with delivery info
+              await db.collection('orders').updateOne(
+                { id: order.id },
+                {
+                  $set: {
+                    delivery: {
+                      status: 'delivered',
+                      items: [availableStock.value.value],
+                      assignedAt: new Date()
+                    }
+                  }
+                }
+              );
+              console.log(`Stock assigned: Order ${order.id} received item ${availableStock.value.id}`);
+            } else {
+              // No stock available - mark as pending
+              await db.collection('orders').updateOne(
+                { id: order.id },
+                {
+                  $set: {
+                    delivery: {
+                      status: 'pending',
+                      message: 'Stok bekleniyor',
+                      items: []
+                    }
+                  }
+                }
+              );
+              console.warn(`No stock available for order ${order.id} (product ${order.productId})`);
+            }
+          } catch (stockError) {
+            console.error(`Stock assignment error for order ${order.id}:`, stockError);
+            // Don't fail the whole callback - mark as pending
+            await db.collection('orders').updateOne(
+              { id: order.id },
+              {
+                $set: {
+                  delivery: {
+                    status: 'pending',
+                    message: 'Stok atama hatası',
+                    items: []
+                  }
+                }
+              }
+            );
+          }
+        } else {
+          console.log(`Stock already assigned for order ${order.id} - skipping (idempotent)`);
+        }
+      }
+
+      // 12. Log successful callback for audit
       console.log(`Callback success: Order ${order.id} status updated to ${newStatus}`);
 
       return NextResponse.json({
