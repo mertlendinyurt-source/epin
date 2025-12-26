@@ -340,6 +340,15 @@ export default function AdminProducts() {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => handleOpenStockDialog(product)}
+                            className="border-blue-700 text-blue-400 hover:bg-blue-900/20"
+                          >
+                            <Package className="w-3 h-3 mr-1" />
+                            Stok
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleEdit(product)}
                             className="border-slate-700 text-white hover:bg-slate-800"
                           >
