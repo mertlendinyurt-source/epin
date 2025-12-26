@@ -151,7 +151,7 @@ export async function GET(request) {
       return NextResponse.json({ success: true, data: products });
     }
 
-    // Resolve player name (Real PUBG API via RapidAPI)
+    // Resolve player name (Real PUBG Mobile API via RapidAPI - ID Game Checker)
     if (pathname === '/api/player/resolve') {
       const playerId = searchParams.get('id');
       if (!playerId || playerId.length < 6) {
@@ -166,26 +166,26 @@ export async function GET(request) {
         
         if (!rapidApiKey) {
           console.error('RAPIDAPI_KEY not configured');
-          // Fallback to mock if API key not available
+          // Fallback to generic name if API key not available
           return NextResponse.json({
             success: true,
             data: {
               playerId,
-              playerName: getMockPlayerName(playerId)
+              playerName: `Player#${playerId.slice(-4)}`
             }
           });
         }
 
-        // Call PUBG Mobile API via RapidAPI
+        // Call PUBG Mobile ID Game Checker API via RapidAPI
         const response = await fetch(
-          `https://pubg-mobile1.p.rapidapi.com/player/${playerId}`,
+          `https://id-game-checker.p.rapidapi.com/pubgm-global/${playerId}`,
           {
             method: 'GET',
             headers: {
-              'X-RapidAPI-Key': rapidApiKey,
-              'X-RapidAPI-Host': 'pubg-mobile1.p.rapidapi.com'
+              'x-rapidapi-host': 'id-game-checker.p.rapidapi.com',
+              'x-rapidapi-key': rapidApiKey
             },
-            signal: AbortSignal.timeout(5000) // 5 second timeout
+            signal: AbortSignal.timeout(10000) // 10 second timeout
           }
         );
 
@@ -201,16 +201,33 @@ export async function GET(request) {
           });
         }
 
-        const data = await response.json();
+        const apiData = await response.json();
+        
+        // Check if player was found
+        if (apiData.error || apiData.msg !== 'id_found') {
+          return NextResponse.json({
+            success: false,
+            error: 'Oyuncu ID bulunamadı. Lütfen geçerli bir PUBG Mobile Global ID girin.'
+          }, { status: 404 });
+        }
+
+        // Check if account is banned
+        if (apiData.data.is_ban === 1) {
+          return NextResponse.json({
+            success: false,
+            error: 'Bu hesap yasaklanmış (banned). UC yüklenemez.'
+          }, { status: 400 });
+        }
         
         // Extract player name from API response
-        const playerName = data?.name || data?.playerName || data?.username || `Player#${playerId.slice(-4)}`;
+        const playerName = apiData.data.username || `Player#${playerId.slice(-4)}`;
         
         return NextResponse.json({
           success: true,
           data: {
             playerId,
-            playerName
+            playerName,
+            isBanned: apiData.data.is_ban === 1
           }
         });
       } catch (error) {
