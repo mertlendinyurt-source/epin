@@ -590,13 +590,39 @@ export async function POST(request) {
       });
     }
 
-    // Create order
+    // Create order (AUTH REQUIRED)
     if (pathname === '/api/orders') {
+      // Verify user authentication
+      const authUser = verifyToken(request);
+      if (!authUser || authUser.type !== 'user') {
+        return NextResponse.json(
+          { success: false, error: 'Sipariş vermek için giriş yapmalısınız', code: 'AUTH_REQUIRED' },
+          { status: 401 }
+        );
+      }
+
       const { productId, playerId, playerName } = body;
       
       if (!productId || !playerId || !playerName) {
         return NextResponse.json(
           { success: false, error: 'Eksik bilgi' },
+          { status: 400 }
+        );
+      }
+
+      // Get user details for customer snapshot
+      const user = await db.collection('users').findOne({ id: authUser.id });
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Kullanıcı bulunamadı' },
+          { status: 404 }
+        );
+      }
+
+      // Validate user has required customer information
+      if (!user.firstName || !user.lastName || !user.email || !user.phone) {
+        return NextResponse.json(
+          { success: false, error: 'Profil bilgileriniz eksik. Lütfen hesap ayarlarından tamamlayın.', code: 'INCOMPLETE_PROFILE' },
           { status: 400 }
         );
       }
@@ -634,13 +660,23 @@ export async function POST(request) {
         );
       }
 
+      // Create customer snapshot (for order record)
+      const customerSnapshot = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone
+      };
+
       // Create order with PENDING status
       const order = {
         id: uuidv4(),
+        userId: user.id, // Link order to user
         productId,
         productTitle: product.title,
         playerId,
         playerName,
+        customer: customerSnapshot, // Store customer info snapshot
         status: 'pending',
         amount: product.discountPrice, // Backend-controlled price
         currency: 'TRY',
