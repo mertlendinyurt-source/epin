@@ -512,23 +512,23 @@ export default function App() {
             <div className="absolute inset-0 bg-black/45" />
           
             <div className="relative bg-[#1e2229]/95 backdrop-blur-md">
-            {playerIdError && (
-              <div className="px-5 py-3 bg-red-600 flex items-start gap-3">
-                <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-red-600 font-bold text-sm">!</span>
+              {playerIdError && (
+                <div className="px-5 py-3 bg-red-600 flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-red-600 font-bold text-sm">!</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white mb-0.5">Hata</div>
+                    <div className="text-sm text-white">{playerIdError}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-white mb-0.5">Hata</div>
-                  <div className="text-sm text-white">{playerIdError}</div>
-                </div>
+              )}
+
+              <div className="px-6 py-5 border-b border-white/5">
+                <h2 className="text-lg font-bold text-white">Oyuncu ID</h2>
               </div>
-            )}
 
-            <div className="px-6 py-5 border-b border-white/5">
-              <h2 className="text-lg font-bold text-white">Oyuncu ID</h2>
-            </div>
-
-            <div className="p-6 space-y-5">
+              <div className="p-6 space-y-5">
               <div>
                 <Label className="text-sm text-white/70 mb-2 block">Oyuncu ID'nizi girin</Label>
                 <Input
