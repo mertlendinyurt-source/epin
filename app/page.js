@@ -147,11 +147,8 @@ export default function App() {
         setPlayerName(data.data.playerName)
         setPlayerValid(true)
         setPlayerIdModalOpen(false)
-        toast.success('Oyuncu bulundu! Ödemeye devam edebilirsiniz.')
-        // Auto proceed to payment
-        setTimeout(() => {
-          handleCheckout()
-        }, 500)
+        toast.success('Oyuncu bulundu!')
+        // DON'T auto proceed - just close modal and return to checkout
       } else {
         setPlayerIdError(data.error || 'Oyuncu bulunamadı')
         setPlayerName('')
