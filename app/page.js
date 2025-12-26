@@ -511,7 +511,7 @@ export default function App() {
             />
             <div className="absolute inset-0 bg-black/45" />
           
-          <div className="relative bg-[#1e2229]/95 backdrop-blur-md">
+            <div className="relative bg-[#1e2229]/95 backdrop-blur-md">
             {playerIdError && (
               <div className="px-5 py-3 bg-red-600 flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
