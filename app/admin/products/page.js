@@ -142,6 +142,72 @@ export default function AdminProducts() {
     }
   }
 
+  const handleOpenStockDialog = async (product) => {
+    setSelectedProductForStock(product)
+    setStockDialogOpen(true)
+    setStockData({ items: '', summary: null })
+    await fetchStock(product.id)
+  }
+
+  const fetchStock = async (productId) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch(`/api/admin/products/${productId}/stock`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setStockData(prev => ({ ...prev, summary: data.data.summary }))
+      }
+    } catch (error) {
+      console.error('Error fetching stock:', error)
+    }
+  }
+
+  const handleAddStock = async () => {
+    if (!stockData.items.trim()) {
+      toast.error('Lütfen en az bir stok item\'ı girin')
+      return
+    }
+
+    const items = stockData.items.split('\n').filter(line => line.trim())
+    
+    if (items.length === 0) {
+      toast.error('Geçerli stok item\'ı bulunamadı')
+      return
+    }
+
+    setStockLoading(true)
+
+    try {
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch(`/api/admin/products/${selectedProductForStock.id}/stock`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ items })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success(data.message || `${items.length} adet stok eklendi`)
+        setStockData({ items: '', summary: null })
+        await fetchStock(selectedProductForStock.id)
+      } else {
+        toast.error(data.error || 'Stok eklenemedi')
+      }
+    } catch (error) {
+      console.error('Error adding stock:', error)
+      toast.error('Stok eklenirken hata oluştu')
+    } finally {
+      setStockLoading(false)
+    }
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
     localStorage.removeItem('adminUsername')
