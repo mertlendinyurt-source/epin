@@ -142,5 +142,5 @@ code {
 
 /* Dialog overlay transparency for background visibility */
 [data-radix-dialog-overlay] {
-  background-color: rgba(0, 0, 0, 0.3) !important;
+  background-color: transparent !important;
 }
