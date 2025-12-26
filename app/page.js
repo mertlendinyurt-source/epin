@@ -494,75 +494,68 @@ export default function App() {
 
       <Dialog open={playerIdModalOpen} onOpenChange={setPlayerIdModalOpen}>
         <DialogContent 
-          className="max-w-[90vw] md:max-w-md p-0 gap-0 overflow-visible border-0" 
-          style={{ 
-            backgroundColor: 'transparent',
-            boxShadow: 'none'
-          }}
+          className="max-w-[90vw] md:max-w-md p-0 gap-0 overflow-hidden border-0" 
+          style={{ backgroundColor: 'transparent' }}
         >
-          {/* PUBG Wallpaper Background */}
-          <div className="relative rounded-lg overflow-hidden">
-            <div 
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: 'url(https://customer-assets.emergentagent.com/job_8b265523-4875-46c8-ab48-988eea2d3777/artifacts/prqvfd8b_wp5153882-pubg-fighting-wallpapers.jpg)',
-                filter: 'blur(8px)'
-              }}
-            />
-            <div className="absolute inset-0 bg-black/45" />
+          <div 
+            className="absolute inset-0 bg-cover bg-center blur-sm -z-10"
+            style={{
+              backgroundImage: 'url(https://customer-assets.emergentagent.com/job_8b265523-4875-46c8-ab48-988eea2d3777/artifacts/prqvfd8b_wp5153882-pubg-fighting-wallpapers.jpg)'
+            }}
+          />
+          <div className="absolute inset-0 bg-black/60 -z-10" />
           
-            <div className="relative bg-[#1e2229]/95 backdrop-blur-md">
-              {playerIdError && (
-                <div className="px-5 py-3 bg-red-600 flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-red-600 font-bold text-sm">!</span>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white mb-0.5">Hata</div>
-                    <div className="text-sm text-white">{playerIdError}</div>
-                  </div>
+          <div className="relative bg-[#1e2229]/95 backdrop-blur-md rounded-lg">
+            {playerIdError && (
+              <div className="px-5 py-3 bg-red-600 flex items-start gap-3 rounded-t-lg">
+                <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-red-600 font-bold text-sm">!</span>
                 </div>
-              )}
-
-              <div className="px-6 py-5 border-b border-white/5">
-                <h2 className="text-lg font-bold text-white">Oyuncu ID</h2>
-              </div>
-
-              <div className="p-6 space-y-5">
                 <div>
-                  <Label className="text-sm text-white/70 mb-2 block">Oyuncu ID'nizi girin</Label>
-                  <Input
-                    placeholder="Oyuncu ID"
-                    value={playerId}
-                    onChange={(e) => {
-                      setPlayerId(e.target.value)
-                      setPlayerIdError('')
-                    }}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handlePlayerIdConfirm()
-                      }
-                    }}
-                    className="h-12 px-4 text-sm bg-[#12161D] text-white placeholder:text-white/40 border border-white/10 focus:border-blue-500 rounded"
-                    autoFocus
-                  />
+                  <div className="text-sm font-bold text-white mb-0.5">Hata</div>
+                  <div className="text-sm text-white">{playerIdError}</div>
                 </div>
-
-                <Button
-                  onClick={handlePlayerIdConfirm}
-                  disabled={playerLoading}
-                  className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold text-base uppercase tracking-wide rounded-lg"
-                >
-                  {playerLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Doğrulanıyor...
-                    </>
-                  ) : (
-                    'Onayla'
-                  )}
-                </Button>
               </div>
+            )}
+
+            <div className="px-6 py-5 border-b border-white/5">
+              <h2 className="text-lg font-bold text-white">Oyuncu ID</h2>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <Label className="text-sm text-white/70 mb-2 block">Oyuncu ID'nizi girin</Label>
+                <Input
+                  placeholder="Oyuncu ID"
+                  value={playerId}
+                  onChange={(e) => {
+                    setPlayerId(e.target.value)
+                    setPlayerIdError('')
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePlayerIdConfirm()
+                    }
+                  }}
+                  className="h-12 px-4 text-sm bg-[#12161D] text-white placeholder:text-white/40 border border-white/10 focus:border-blue-500 rounded"
+                  autoFocus
+                />
+              </div>
+
+              <Button
+                onClick={handlePlayerIdConfirm}
+                disabled={playerLoading}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold text-base uppercase tracking-wide rounded-lg"
+              >
+                {playerLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Doğrulanıyor...
+                  </>
+                ) : (
+                  'Onayla'
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>
