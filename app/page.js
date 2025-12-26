@@ -498,14 +498,15 @@ export default function App() {
           style={{ backgroundColor: 'transparent' }}
         >
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-sm -z-10"
+            className="absolute inset-0 bg-cover bg-center -z-10"
             style={{
-              backgroundImage: 'url(https://customer-assets.emergentagent.com/job_8b265523-4875-46c8-ab48-988eea2d3777/artifacts/prqvfd8b_wp5153882-pubg-fighting-wallpapers.jpg)'
+              backgroundImage: 'url(https://customer-assets.emergentagent.com/job_8b265523-4875-46c8-ab48-988eea2d3777/artifacts/prqvfd8b_wp5153882-pubg-fighting-wallpapers.jpg)',
+              filter: 'blur(4px)'
             }}
           />
-          <div className="absolute inset-0 bg-black/60 -z-10" />
+          <div className="absolute inset-0 bg-black/30 -z-10" />
           
-          <div className="relative bg-[#1e2229]/95 backdrop-blur-md rounded-lg">
+          <div className="relative bg-[#1e2229]/90 backdrop-blur-sm rounded-lg">
             {playerIdError && (
               <div className="px-5 py-3 bg-red-600 flex items-start gap-3 rounded-t-lg">
                 <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
