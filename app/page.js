@@ -60,17 +60,31 @@ export default function App() {
   }
 
   const handleCheckout = async () => {
+    // 1. Check player ID first
     if (!playerValid || !playerName) {
       setPlayerIdModalOpen(true)
       setPlayerIdError('')
       return
     }
 
+    // 2. Check authentication
+    const token = localStorage.getItem('userToken')
+    if (!token) {
+      // Open auth modal instead of just showing toast
+      setAuthModalOpen(true)
+      toast.error('Sipariş vermek için giriş yapmalısınız')
+      return
+    }
+
+    // 3. Proceed with order
     setOrderProcessing(true)
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           productId: selectedProduct.id,
           playerId,
@@ -80,9 +94,22 @@ export default function App() {
 
       const data = await response.json()
       
+      if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userData')
+        setIsAuthenticated(false)
+        setAuthModalOpen(true)
+        toast.error('Oturumunuz sonlandı. Lütfen tekrar giriş yapın')
+        return
+      }
+      
       if (data.success) {
         window.location.href = data.data.paymentUrl
       } else {
+        if (data.code === 'AUTH_REQUIRED') {
+          setAuthModalOpen(true)
+        }
         toast.error(data.error || 'Sipariş oluşturulamadı')
       }
     } catch (error) {
@@ -91,6 +118,12 @@ export default function App() {
     } finally {
       setOrderProcessing(false)
     }
+  }
+
+  const handleAuthSuccess = (authData) => {
+    setIsAuthenticated(true)
+    toast.success('Giriş başarılı! Şimdi ödemeye devam edebilirsiniz.')
+    // User can now click checkout again
   }
 
   const handlePlayerIdConfirm = async () => {
