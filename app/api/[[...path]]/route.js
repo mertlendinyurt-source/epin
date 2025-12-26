@@ -492,39 +492,131 @@ export async function POST(request) {
       });
     }
 
-    // Mock Shopier callback
+    // Shopier callback (Production-ready with security)
     if (pathname === '/api/payment/shopier/callback') {
-      const { orderId, status, transactionId } = body;
+      const { orderId, status, transactionId, payment_id, random_nr, total_order_value, platform_order_id, hash } = body;
       
-      const order = await db.collection('orders').findOne({ id: orderId });
+      // 1. Validate order exists
+      const order = await db.collection('orders').findOne({ id: orderId || platform_order_id });
       if (!order) {
+        console.error(`Callback error: Order ${orderId || platform_order_id} not found`);
         return NextResponse.json(
           { success: false, error: 'Sipariş bulunamadı' },
           { status: 404 }
         );
       }
 
-      // Update order status
+      // 2. Check if order is already PAID (idempotency protection)
+      if (order.status === 'paid') {
+        console.log(`Callback: Order ${order.id} already PAID. Ignoring duplicate callback.`);
+        return NextResponse.json({
+          success: true,
+          message: 'Ödeme zaten işlenmiş'
+        });
+      }
+
+      // 3. Get Shopier settings for hash validation
+      const shopierSettings = await db.collection('shopier_settings').findOne({ isActive: true });
+      if (!shopierSettings) {
+        console.error('Callback error: Shopier settings not found');
+        return NextResponse.json(
+          { success: false, error: 'Ödeme sistemi yapılandırılmamış' },
+          { status: 500 }
+        );
+      }
+
+      // 4. Decrypt API secret for hash validation
+      let apiSecret;
+      try {
+        apiSecret = decrypt(shopierSettings.apiSecret);
+      } catch (error) {
+        console.error('Callback error: Failed to decrypt API secret');
+        return NextResponse.json(
+          { success: false, error: 'Yapılandırma hatası' },
+          { status: 500 }
+        );
+      }
+
+      // 5. Validate hash signature (CRITICAL SECURITY)
+      const expectedHash = generateShopierHash(order.id, order.amount, apiSecret);
+      if (hash && hash !== expectedHash) {
+        console.error(`Callback error: Hash mismatch. Expected: ${expectedHash}, Received: ${hash}`);
+        // Log the failed attempt for security monitoring
+        await db.collection('payment_security_logs').insertOne({
+          orderId: order.id,
+          event: 'hash_mismatch',
+          receivedHash: hash,
+          expectedHash,
+          payload: body,
+          timestamp: new Date()
+        });
+        
+        return NextResponse.json(
+          { success: false, error: 'Geçersiz imza' },
+          { status: 403 }
+        );
+      }
+
+      // 6. Check transaction_id uniqueness (double payment protection)
+      const txnId = transactionId || payment_id;
+      if (txnId) {
+        const existingPayment = await db.collection('payments').findOne({ providerTxnId: txnId });
+        if (existingPayment) {
+          console.error(`Callback error: Transaction ${txnId} already exists`);
+          return NextResponse.json({
+            success: true,
+            message: 'İşlem zaten kaydedilmiş'
+          });
+        }
+      }
+
+      // 7. Map Shopier status to application status
+      let newStatus;
+      if (status === 'success' || status === '1' || status === 'approved') {
+        newStatus = 'paid';
+      } else if (status === 'failed' || status === 'cancelled' || status === 'declined') {
+        newStatus = 'failed';
+      } else {
+        newStatus = 'pending';
+      }
+
+      // 8. Enforce immutable status transitions (PENDING → PAID/FAILED only)
+      if (order.status === 'failed' && newStatus === 'paid') {
+        console.error(`Callback error: Cannot change order ${order.id} from FAILED to PAID`);
+        return NextResponse.json(
+          { success: false, error: 'Geçersiz durum geçişi' },
+          { status: 400 }
+        );
+      }
+
+      // 9. Update order status
       await db.collection('orders').updateOne(
-        { id: orderId },
+        { id: order.id },
         {
           $set: {
-            status: status === 'success' ? 'paid' : 'failed',
+            status: newStatus,
             updatedAt: new Date()
           }
         }
       );
 
-      // Create payment record
+      // 10. Create payment record with full audit trail
       await db.collection('payments').insertOne({
         id: uuidv4(),
-        orderId,
+        orderId: order.id,
         provider: 'shopier',
-        providerTxnId: transactionId || uuidv4(),
+        providerTxnId: txnId || uuidv4(),
+        status: newStatus,
+        amount: order.amount,
+        currency: order.currency,
+        hashValidated: true,
         rawPayload: body,
         verifiedAt: new Date(),
         createdAt: new Date()
       });
+
+      // 11. Log successful callback for audit
+      console.log(`Callback success: Order ${order.id} status updated to ${newStatus}`);
 
       return NextResponse.json({
         success: true,
