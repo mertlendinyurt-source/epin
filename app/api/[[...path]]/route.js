@@ -980,21 +980,24 @@ export async function POST(request) {
               }
             );
 
-            if (availableStock.value) {
+            if (availableStock) {
               // Stock found and assigned - update order with delivery info
+              const stockCode = availableStock.value || (availableStock._id ? 'STOCK_ASSIGNED' : null);
+              
               await db.collection('orders').updateOne(
                 { id: order.id },
                 {
                   $set: {
                     delivery: {
                       status: 'delivered',
-                      items: [availableStock.value.value],
+                      items: [stockCode],
+                      stockId: availableStock._id,
                       assignedAt: new Date()
                     }
                   }
                 }
               );
-              console.log(`Stock assigned: Order ${order.id} received item ${availableStock.value.id}`);
+              console.log(`Stock assigned: Order ${order.id} received code: ${stockCode}`);
             } else {
               // No stock available - mark as pending
               await db.collection('orders').updateOne(
