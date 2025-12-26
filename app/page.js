@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, Check, X, Loader2, Info, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Toaster } from '@/components/ui/sonner'
@@ -50,6 +50,49 @@ export default function App() {
     setPlayerValid(null)
   }
 
+  const resolvePlayerName = async (id) => {
+    if (!id || id.length < 6) {
+      setPlayerValid(false)
+      setPlayerName('')
+      return
+    }
+
+    setPlayerLoading(true)
+    try {
+      const response = await fetch(`/api/player/resolve?id=${id}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setPlayerName(data.data.playerName)
+        setPlayerValid(true)
+        toast.success('Oyuncu bulundu!')
+      } else {
+        setPlayerName('')
+        setPlayerValid(false)
+        toast.error(data.error || 'Oyuncu bulunamadı')
+      }
+    } catch (error) {
+      console.error('Error resolving player:', error)
+      setPlayerName('')
+      setPlayerValid(false)
+      toast.error('Oyuncu adı alınırken hata oluştu')
+    } finally {
+      setPlayerLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (playerId) {
+      const timer = setTimeout(() => {
+        resolvePlayerName(playerId)
+      }, 600)
+      return () => clearTimeout(timer)
+    } else {
+      setPlayerName('')
+      setPlayerValid(null)
+    }
+  }, [playerId])
+
   const handleCheckout = async () => {
     // If player ID not valid, open Player ID modal
     if (!playerValid || !playerName) {
@@ -92,6 +135,7 @@ export default function App() {
       return
     }
 
+    // Validate player ID
     setPlayerLoading(true)
     setPlayerIdError('')
     
@@ -104,6 +148,7 @@ export default function App() {
         setPlayerValid(true)
         setPlayerIdModalOpen(false)
         toast.success('Oyuncu bulundu!')
+        // DON'T auto proceed - just close modal and return to checkout
       } else {
         setPlayerIdError(data.error || 'Oyuncu bulunamadı')
         setPlayerName('')
@@ -119,6 +164,7 @@ export default function App() {
     }
   }
 
+  // Filter Sidebar Component
   const FilterSidebar = () => (
     <div className="w-full rounded-lg bg-[#1e2229] p-5">
       <div className="flex items-center gap-2 mb-5">
@@ -243,7 +289,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Hero with PUBG wallpaper */}
+      {/* Hero - 300px on desktop, shorter on mobile */}
       <div className="relative h-[200px] md:h-[300px] flex items-start overflow-hidden bg-[#1a1a1a]">
         <div 
           className="absolute inset-0 bg-cover bg-center"
@@ -273,7 +319,7 @@ export default function App() {
       {/* Main Content */}
       <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-4 md:py-6">
         <div className="flex gap-4 md:gap-5">
-          {/* Desktop Sidebar */}
+          {/* Desktop Sidebar - Hidden on mobile */}
           <div className="hidden lg:block w-[240px] xl:w-[265px] flex-shrink-0">
             <div className="sticky top-24">
               <FilterSidebar />
@@ -295,10 +341,12 @@ export default function App() {
                     className="group relative rounded overflow-hidden cursor-pointer transition-all hover:shadow-lg"
                     style={{ backgroundColor: '#252525' }}
                   >
+                    {/* Info Icon */}
                     <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-white/20 flex items-center justify-center z-10">
                       <Info className="w-2.5 h-2.5 text-white" />
                     </div>
 
+                    {/* UC Image - Much smaller */}
                     <div className="relative h-28 md:h-32 overflow-hidden flex items-center justify-center bg-gradient-to-br from-zinc-900/30 to-zinc-950/30">
                       <img 
                         src="https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=150&h=150&fit=crop"
@@ -307,24 +355,36 @@ export default function App() {
                       />
                     </div>
 
+                    {/* Content - Minimal padding */}
                     <div className="p-3">
+                      {/* MOBILE */}
                       <div className="text-[11px] text-white/70 font-bold uppercase mb-1">MOBILE</div>
+                      
+                      {/* UC Amount */}
                       <div className="text-base md:text-[18px] font-bold text-white mb-2">
                         {product.ucAmount} UC
                       </div>
+
+                      {/* Region */}
                       <div className="flex items-center gap-1 text-[11px] md:text-xs font-bold text-white mb-0.5">
                         <span>🇹🇷 TÜRKİYE</span>
                       </div>
+                      
+                      {/* Availability */}
                       <div className="text-[10px] text-[#32CD32] mb-2">Bölgenizde kullanılabilir</div>
+
+                      {/* Prices */}
                       <div>
                         {product.discountPrice < product.price && (
                           <div className="text-[12px] md:text-[13px] text-[#B22222] line-through mb-0.5">
                             ₺ {product.price.toFixed(2)}
                           </div>
                         )}
+                        
                         <div className="text-base md:text-[18px] font-bold text-white mb-0.5">
                           ₺ {product.discountPrice.toFixed(2)}
                         </div>
+                        
                         {product.discountPercent > 0 && (
                           <div className="text-[10px] md:text-[11px] text-[#32CD32]">
                             {product.discountPercent}% indirim
@@ -340,168 +400,187 @@ export default function App() {
         </div>
       </div>
 
-      {/* Checkout Dialog */}
+      {/* Checkout Dialog - With PUBG background */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden border-0" style={{ backgroundColor: 'transparent' }}>
+          {/* PUBG Background - Blurred */}
           <div 
             className="absolute inset-0 bg-cover bg-center blur-sm -z-10"
             style={{
-              backgroundImage: 'url(https://customer-assets.emergentagent.com/job_8b265523-4875-46c8-ab48-988eea2d3777/artifacts/prqvfd8b_wp5153882-pubg-fighting-wallpapers.jpg)'
+              backgroundImage: 'url(https://customer-assets.emergentagent.com/job_8b265523-4875-46c8-ab48-988eea2d3777/artifacts/ame3h6w6_wp5153882-pubg-fighting-wallpapers.jpg)'
             }}
           />
           <div className="absolute inset-0 bg-black/70 -z-10" />
           
           <div className="relative bg-[#1e2229]/95 backdrop-blur-md flex flex-col max-h-[90vh]">
+            {/* Title - Fixed */}
             <div className="px-5 md:px-8 py-4 md:py-6 border-b border-white/5 flex-shrink-0">
               <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">ÖDEME TÜRÜNÜ SEÇİN</h2>
             </div>
             
+            {/* Scrollable Content */}
             <div className="overflow-y-auto flex-1">
               <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="p-5 md:p-8 space-y-6 md:space-y-8 border-b md:border-b-0 md:border-r border-white/5">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-sm md:text-base text-white/80 uppercase">Oyuncu ID</Label>
-                      {!playerValid && (
-                        <button 
-                          onClick={() => setPlayerIdModalOpen(true)}
-                          className="text-xs md:text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
-                        >
-                          Oyuncu ID Girin
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                    
-                    {playerValid && playerName ? (
-                      <div className="px-4 py-3.5 rounded bg-green-500/15 border border-green-500/30 flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 text-green-400 mb-1 text-xs font-semibold">
-                            <Check className="w-4 h-4" />
-                            <span>Oyuncu Bulundu</span>
-                          </div>
-                          <p className="text-white text-base font-bold">{playerName}</p>
-                          <p className="text-white/50 text-xs mt-0.5">ID: {playerId}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setPlayerValid(null)
-                            setPlayerName('')
-                            setPlayerId('')
-                          }}
-                          className="text-white/60 hover:text-white text-xs"
-                        >
-                          Değiştir
-                        </button>
-                      </div>
-                    ) : (
-                      <div 
+              {/* Left Column: Player ID & Payment Methods */}
+              <div className="p-5 md:p-8 space-y-6 md:space-y-8 border-b md:border-b-0 md:border-r border-white/5">
+                {/* Oyuncu ID */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm md:text-base text-white/80 uppercase">Oyuncu ID</Label>
+                    {!playerValid && (
+                      <button 
                         onClick={() => setPlayerIdModalOpen(true)}
-                        className="px-4 py-3 rounded bg-[#12161D] border border-white/10 text-white/40 cursor-pointer hover:border-white/20 transition-colors"
+                        className="text-xs md:text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
                       >
-                        <span className="text-sm">Oyuncu ID'nizi girin</span>
-                      </div>
+                        Oyuncu ID Girin
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
+                          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
+                        </svg>
+                      </button>
                     )}
                   </div>
-
-                  <div>
-                    <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Ödeme yöntemleri</Label>
-                    
-                    <div className="relative p-4 md:p-5 rounded-lg bg-[#12161D] border border-white/10">
-                      <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white flex items-center justify-center">
-                        <Check className="w-4 h-4 text-black" />
-                      </div>
-                      
-                      <div className="mb-3">
-                        <div className="text-base md:text-lg font-bold text-white mb-1">Kredi / Banka Kartı</div>
-                        <div className="inline-block px-2 py-0.5 rounded bg-white/10 text-[11px] text-white/70">
-                          Anında teslimat
+                  
+                  {/* Show validated player info OR input */}
+                  {playerValid && playerName ? (
+                    <div className="px-4 py-3.5 rounded bg-green-500/15 border border-green-500/30 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 text-green-400 mb-1 text-xs font-semibold">
+                          <Check className="w-4 h-4" />
+                          <span>Oyuncu Bulundu</span>
                         </div>
+                        <p className="text-white text-base font-bold">{playerName}</p>
+                        <p className="text-white/50 text-xs mt-0.5">ID: {playerId}</p>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <div className="px-2 py-1 bg-white rounded text-blue-600 font-bold text-xs">VISA</div>
-                        <div className="px-2 py-1 bg-white rounded text-red-600 font-bold text-xs">MC</div>
-                        <div className="px-2 py-1 bg-white rounded text-blue-500 font-bold text-xs">TROY</div>
+                      <button
+                        onClick={() => {
+                          setPlayerValid(null)
+                          setPlayerName('')
+                          setPlayerId('')
+                        }}
+                        className="text-white/60 hover:text-white text-xs"
+                      >
+                        Değiştir
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => setPlayerIdModalOpen(true)}
+                      className="px-4 py-3 rounded bg-[#12161D] border border-white/10 text-white/40 cursor-pointer hover:border-white/20 transition-colors"
+                    >
+                      <span className="text-sm">Oyuncu ID'nizi girin</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Payment Methods - Only Credit Card */}
+                <div>
+                  <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Ödeme yöntemleri</Label>
+                  
+                  {/* Credit Card - Only option */}
+                  <div className="relative p-4 md:p-5 rounded-lg bg-[#12161D] border border-white/10">
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white flex items-center justify-center">
+                      <Check className="w-4 h-4 text-black" />
+                    </div>
+                    
+                    <div className="mb-3">
+                      <div className="text-base md:text-lg font-bold text-white mb-1">Kredi / Banka Kartı</div>
+                      <div className="inline-block px-2 py-0.5 rounded bg-white/10 text-[11px] text-white/70">
+                        Anında teslimat
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-7 bg-white rounded flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-xs">VISA</span>
+                      </div>
+                      <div className="w-10 h-7 bg-white rounded flex items-center justify-center">
+                        <span className="text-red-600 font-bold text-xs">MC</span>
+                      </div>
+                      <div className="w-10 h-7 bg-white rounded flex items-center justify-center">
+                        <span className="text-blue-500 font-bold text-xs">TROY</span>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {selectedProduct && (
-                  <div className="p-5 md:p-8 space-y-6 md:space-y-8 bg-[#1a1e24]/95">
-                    <div>
-                      <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Ürün</Label>
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded flex items-center justify-center bg-[#12161D]">
-                          <img 
-                            src="https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=100&h=100&fit=crop"
-                            alt="UC"
-                            className="w-10 h-10 md:w-12 md:h-12 object-contain opacity-70"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-xl md:text-2xl font-bold text-white mb-2">{selectedProduct.title}</div>
-                          <div className="flex items-center gap-1.5 text-xs md:text-sm font-bold text-white mb-1">
-                            <span>🇹🇷 TÜRKİYE</span>
-                          </div>
-                          <div className="text-[11px] md:text-xs text-green-400">Bölgenizde kullanılabilir</div>
-                        </div>
+              {/* Right Column: Product & Price Summary */}
+              {selectedProduct && (
+                <div className="p-5 md:p-8 space-y-6 md:space-y-8 bg-[#1a1e24]/95">
+                  {/* Product */}
+                  <div>
+                    <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Ürün</Label>
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded flex items-center justify-center bg-[#12161D]">
+                        <img 
+                          src="https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=100&h=100&fit=crop"
+                          alt="UC"
+                          className="w-10 h-10 md:w-12 md:h-12 object-contain opacity-70"
+                        />
                       </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Fiyat detayları</Label>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm md:text-base">
-                          <span className="text-white/70">Orjinal Fiyat</span>
-                          <span className="text-white font-bold">₺ {selectedProduct.price.toFixed(2)}</span>
+                      <div className="flex-1">
+                        <div className="text-xl md:text-2xl font-bold text-white mb-2">{selectedProduct.title}</div>
+                        <div className="flex items-center gap-1.5 text-xs md:text-sm font-bold text-white mb-1">
+                          <span>🇹🇷 TÜRKİYE</span>
                         </div>
-                        {selectedProduct.discountPrice < selectedProduct.price && (
-                          <div className="flex justify-between items-center text-sm md:text-base">
-                            <span className="text-green-400 font-semibold">Size Özel Fiyat</span>
-                            <span className="text-green-400 font-bold">₺ {selectedProduct.discountPrice.toFixed(2)}</span>
-                          </div>
-                        )}
+                        <div className="text-[11px] md:text-xs text-green-400">Bölgenizde kullanılabilir</div>
                       </div>
-                    </div>
-
-                    <div className="pt-5 border-t border-white/10">
-                      <div className="flex justify-between items-center mb-6">
-                        <span className="text-sm md:text-base text-white/70 uppercase">Ödenecek Tutar</span>
-                        <span className="text-2xl md:text-3xl font-black text-white">
-                          ₺ {selectedProduct.discountPrice.toFixed(2)}
-                        </span>
-                      </div>
-
-                      <Button
-                        onClick={handleCheckout}
-                        disabled={orderProcessing}
-                        className="w-full h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-bold text-base md:text-lg uppercase tracking-wide rounded-lg"
-                      >
-                        {orderProcessing ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            İşleniyor...
-                          </>
-                        ) : (
-                          'Ödemeye Git'
-                        )}
-                      </Button>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Price Details */}
+                  <div>
+                    <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Fiyat detayları</Label>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm md:text-base">
+                        <span className="text-white/70">Orjinal Fiyat</span>
+                        <span className="text-white font-bold">₺ {selectedProduct.price.toFixed(2)}</span>
+                      </div>
+                      {selectedProduct.discountPrice < selectedProduct.price && (
+                        <div className="flex justify-between items-center text-sm md:text-base">
+                          <span className="text-green-400 font-semibold">Size Özel Fiyat</span>
+                          <span className="text-green-400 font-bold">₺ {selectedProduct.discountPrice.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Total Amount */}
+                  <div className="pt-5 border-t border-white/10">
+                    <div className="flex justify-between items-center mb-6">
+                      <span className="text-sm md:text-base text-white/70 uppercase">Ödenecek Tutar</span>
+                      <span className="text-2xl md:text-3xl font-black text-white">
+                        ₺ {selectedProduct.discountPrice.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <Button
+                      onClick={handleCheckout}
+                      disabled={orderProcessing}
+                      className="w-full h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-bold text-base md:text-lg uppercase tracking-wide rounded-lg"
+                    >
+                      {orderProcessing ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          İşleniyor...
+                        </>
+                      ) : (
+                        'Ödemeye Git'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Player ID Modal */}
+      {/* Player ID Modal - Opens when payment clicked without ID */}
       <Dialog open={playerIdModalOpen} onOpenChange={setPlayerIdModalOpen}>
         <DialogContent className="max-w-[90vw] md:max-w-md p-0 gap-0 overflow-hidden border-0" style={{ backgroundColor: 'transparent' }}>
+          {/* PUBG Background - Blurred */}
           <div 
             className="absolute inset-0 bg-cover bg-center blur-sm -z-10"
             style={{
@@ -511,6 +590,7 @@ export default function App() {
           <div className="absolute inset-0 bg-black/70 -z-10" />
           
           <div className="relative bg-[#1e2229]/95 backdrop-blur-md">
+            {/* Error Banner - if error exists */}
             {playerIdError && (
               <div className="px-5 py-3 bg-red-600 flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -525,10 +605,28 @@ export default function App() {
               </div>
             )}
 
+          <div className="relative bg-[#1e2229]/95 backdrop-blur-md">
+            {/* Error Banner - if error exists */}
+            {playerIdError && (
+              <div className="px-5 py-3 bg-red-600 flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-white mb-0.5">Hata</div>
+                  <div className="text-sm text-white">{playerIdError}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Title */}
             <div className="px-6 py-5 border-b border-white/5">
               <h2 className="text-lg font-bold text-white">Oyuncu ID</h2>
             </div>
 
+            {/* Content */}
             <div className="p-6 space-y-5">
               <div>
                 <Label className="text-sm text-white/70 mb-2 block">Oyuncu ID'nizi girin</Label>
