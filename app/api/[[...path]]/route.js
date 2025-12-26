@@ -392,6 +392,60 @@ export async function GET(request) {
       });
     }
 
+    // User: Get my orders
+    if (pathname === '/api/account/orders') {
+      const authUser = verifyToken(request);
+      if (!authUser || authUser.type !== 'user') {
+        return NextResponse.json(
+          { success: false, error: 'Giriş yapmalısınız' },
+          { status: 401 }
+        );
+      }
+
+      // Get user's orders
+      const orders = await db.collection('orders')
+        .find({ userId: authUser.id })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      return NextResponse.json({
+        success: true,
+        data: orders
+      });
+    }
+
+    // User: Get single order details
+    if (pathname.match(/^\/api\/account\/orders\/[^\/]+$/)) {
+      const authUser = verifyToken(request);
+      if (!authUser || authUser.type !== 'user') {
+        return NextResponse.json(
+          { success: false, error: 'Giriş yapmalısınız' },
+          { status: 401 }
+        );
+      }
+
+      const orderId = pathname.split('/').pop();
+      const order = await db.collection('orders').findOne({ 
+        id: orderId, 
+        userId: authUser.id // Only allow user to see their own orders
+      });
+
+      if (!order) {
+        return NextResponse.json(
+          { success: false, error: 'Sipariş bulunamadı' },
+          { status: 404 }
+        );
+      }
+
+      // Get payment details
+      const payment = await db.collection('payments').findOne({ orderId });
+
+      return NextResponse.json({
+        success: true,
+        data: { order, payment }
+      });
+    }
+
     return NextResponse.json(
       { success: false, error: 'Endpoint bulunamadı' },
       { status: 404 }
