@@ -765,6 +765,54 @@ backend:
         agent: "testing"
         comment: "Email security features working correctly. SMTP passwords encrypted using AES-256-GCM encryption before database storage. Passwords properly masked (••••••••) when returned to frontend. Decryption working correctly for email sending. No plaintext passwords stored or exposed. Security implementation verified."
 
+  - task: "Site Settings Management - GET Admin"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/admin/settings/site working correctly. Requires admin JWT authentication (401 without token). Returns all site settings fields: siteName, metaTitle, metaDescription, contactEmail, contactPhone, logo, favicon, heroImage, categoryIcon. Returns default values if no settings configured. Authentication working as expected."
+
+  - task: "Site Settings Management - POST Admin"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/admin/settings/site working correctly. Requires admin JWT authentication (401 without token). Saves site settings with proper validation: empty siteName rejected (400), metaTitle > 70 chars rejected (400), metaDescription > 160 chars rejected (400), invalid email format rejected (400). Settings saved successfully with merge functionality preserving existing values. Returns success message 'Site ayarları güncellendi'."
+
+  - task: "Site Settings Management - GET Public"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/site/settings working correctly. Public endpoint requires no authentication. Returns all public site settings: siteName, metaTitle, metaDescription, contactEmail, contactPhone, logo, favicon, heroImage, categoryIcon. Returns default values if no settings configured. Public access working as expected."
+
+  - task: "Site Settings Persistence"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Site settings persistence working correctly. Settings saved via POST /api/admin/settings/site are properly stored in database and retrievable via both admin and public endpoints. All field values persist correctly (siteName, metaTitle, metaDescription, contactEmail, contactPhone). Deactivation of previous settings and creation of new active settings working correctly. Full persistence cycle verified."
+
 frontend:
   - task: "Auth Modal (Register + Login)"
     implemented: true
