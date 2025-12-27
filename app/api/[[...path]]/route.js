@@ -62,6 +62,12 @@ function verifyAdminToken(request) {
 async function initializeDb() {
   const db = await getDb();
   
+  // Migrate existing products: rename 'image' to 'imageUrl'
+  await db.collection('products').updateMany(
+    { image: { $exists: true }, imageUrl: { $exists: false } },
+    { $rename: { image: 'imageUrl' } }
+  );
+  
   // Check if products exist
   const productsCount = await db.collection('products').countDocuments();
   if (productsCount === 0) {
@@ -75,7 +81,7 @@ async function initializeDb() {
         discountPercent: 20,
         active: true,
         sortOrder: 1,
-        image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&h=300&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&h=300&fit=crop',
         createdAt: new Date()
       },
       {
@@ -87,7 +93,7 @@ async function initializeDb() {
         discountPercent: 10,
         active: true,
         sortOrder: 2,
-        image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400&h=300&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400&h=300&fit=crop',
         createdAt: new Date()
       },
       {
@@ -99,7 +105,7 @@ async function initializeDb() {
         discountPercent: 10,
         active: true,
         sortOrder: 3,
-        image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&h=300&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&h=300&fit=crop',
         createdAt: new Date()
       },
       {
@@ -111,7 +117,7 @@ async function initializeDb() {
         discountPercent: 10,
         active: true,
         sortOrder: 4,
-        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
         createdAt: new Date()
       },
       {
