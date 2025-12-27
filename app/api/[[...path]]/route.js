@@ -1285,47 +1285,6 @@ export async function POST(request) {
       });
     }
 
-    // Admin: Upload file
-    if (pathname === '/api/admin/upload') {
-      const user = verifyAdminToken(request);
-      if (!user) {
-        return NextResponse.json(
-          { success: false, error: 'Yetkisiz erişim' },
-          { status: 401 }
-        );
-      }
-
-      try {
-        const formData = await request.formData();
-        const file = formData.get('file');
-        const category = formData.get('category') || 'general';
-
-        if (!file) {
-          return NextResponse.json(
-            { success: false, error: 'Dosya seçilmedi' },
-            { status: 400 }
-          );
-        }
-
-        const fileUrl = await saveUploadedFile(file, category);
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            url: fileUrl,
-            filename: file.name,
-            size: file.size,
-            type: file.type
-          }
-        });
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 400 }
-        );
-      }
-    }
-
     // Admin: Update site settings
     if (pathname === '/api/admin/settings/site') {
       const user = verifyAdminToken(request);
