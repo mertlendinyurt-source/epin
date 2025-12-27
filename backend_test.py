@@ -69,8 +69,8 @@ def register_test_user():
             
             if login_response.status_code == 200:
                 login_data = login_response.json()
-                if login_data.get('success') and login_data.get('token'):
-                    user_token = login_data['token']
+                if login_data.get('success') and login_data.get('data') and login_data['data'].get('token'):
+                    user_token = login_data['data']['token']
                     print(f"✅ Test user logged in successfully")
                     return True
             
