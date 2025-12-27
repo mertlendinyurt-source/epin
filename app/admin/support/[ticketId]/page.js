@@ -122,8 +122,10 @@ export default function AdminTicketDetail() {
       const response = await fetch(`/api/admin/support/tickets/${params.ticketId}/close`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({})
       })
 
       const data = await response.json()
