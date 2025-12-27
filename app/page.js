@@ -25,11 +25,34 @@ export default function App() {
   const [playerIdError, setPlayerIdError] = useState('')
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [siteSettings, setSiteSettings] = useState(null)
 
   useEffect(() => {
     fetchProducts()
     checkAuth()
+    fetchSiteSettings()
   }, [])
+
+  const fetchSiteSettings = async () => {
+    try {
+      const response = await fetch('/api/site/settings')
+      const data = await response.json()
+      if (data.success) {
+        setSiteSettings(data.data)
+        
+        // Update favicon dynamically
+        if (data.data.favicon) {
+          const link = document.querySelector("link[rel*='icon']") || document.createElement('link')
+          link.type = 'image/x-icon'
+          link.rel = 'icon'
+          link.href = `${data.data.favicon}?v=${Date.now()}` // Cache busting
+          document.getElementsByTagName('head')[0].appendChild(link)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching site settings:', error)
+    }
+  }
 
   const checkAuth = () => {
     const token = localStorage.getItem('userToken')
