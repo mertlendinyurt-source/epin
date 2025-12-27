@@ -2187,6 +2187,17 @@ export async function POST(request) {
 
       // 11. AUTO-ASSIGN STOCK (if PAID and not already assigned)
       if (newStatus === 'paid') {
+        // Get user and product for email
+        const orderUser = await db.collection('users').findOne({ id: order.userId });
+        const product = await db.collection('products').findOne({ id: order.productId });
+
+        // Send payment success email
+        if (orderUser && product) {
+          sendPaymentSuccessEmail(db, order, orderUser, product).catch(err => 
+            console.error('Payment success email failed:', err)
+          );
+        }
+
         // Check if stock already assigned (idempotency)
         const currentOrder = await db.collection('orders').findOne({ id: order.id });
         
@@ -2231,6 +2242,13 @@ export async function POST(request) {
                 }
               );
               console.log(`Stock assigned: Order ${order.id} received code: ${stockCode}`);
+              
+              // Send delivered email with codes
+              if (orderUser && product) {
+                sendDeliveredEmail(db, order, orderUser, product, [stockCode]).catch(err => 
+                  console.error('Delivered email failed:', err)
+                );
+              }
             } else {
               // No stock available - mark as pending
               await db.collection('orders').updateOne(
@@ -2246,6 +2264,13 @@ export async function POST(request) {
                 }
               );
               console.warn(`No stock available for order ${order.id} (product ${order.productId})`);
+              
+              // Send pending stock email
+              if (orderUser && product) {
+                sendPendingStockEmail(db, order, orderUser, product, 'Stok bekleniyor').catch(err => 
+                  console.error('Pending stock email failed:', err)
+                );
+              }
             }
           } catch (stockError) {
             console.error(`Stock assignment error for order ${order.id}:`, stockError);
