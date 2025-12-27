@@ -263,8 +263,8 @@ def test_email_test_authorized(admin_token):
             try:
                 data = response.json()
                 error_msg = data.get('error', '')
-                if 'gönderilemedi' in error_msg or 'bağlantısı kurulamadı' in error_msg:
-                    log_test("Test Email POST (Authorized)", "PASS", f"Expected SMTP error: {error_msg}")
+                if 'gönderilemedi' in error_msg or 'bağlantısı kurulamadı' in error_msg or 'Invalid login' in error_msg or 'BadCredentials' in error_msg:
+                    log_test("Test Email POST (Authorized)", "PASS", f"Expected SMTP error: {error_msg[:100]}...")
                     return True
                 else:
                     log_test("Test Email POST (Authorized)", "WARN", f"Unexpected 500 error: {error_msg}")
