@@ -951,7 +951,24 @@ export async function GET(request) {
           metaTitle: settings?.metaTitle || 'PUBG UC Store | Güvenilir UC Satış Platformu',
           metaDescription: settings?.metaDescription || 'PUBG Mobile UC satın al. Güvenilir, hızlı ve uygun fiyatlı UC satış platformu.',
           contactEmail: settings?.contactEmail || '',
-          contactPhone: settings?.contactPhone || ''
+          contactPhone: settings?.contactPhone || '',
+          dailyBannerEnabled: settings?.dailyBannerEnabled !== false,
+          dailyBannerTitle: settings?.dailyBannerTitle || 'Bugüne Özel Fiyatlar',
+          dailyBannerSubtitle: settings?.dailyBannerSubtitle || ''
+        }
+      });
+    }
+
+    // Public: Get daily banner settings
+    if (pathname === '/api/site/banner') {
+      const settings = await db.collection('site_settings').findOne({ active: true });
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: settings?.dailyBannerEnabled !== false,
+          title: settings?.dailyBannerTitle || 'Bugüne Özel Fiyatlar',
+          subtitle: settings?.dailyBannerSubtitle || ''
         }
       });
     }
