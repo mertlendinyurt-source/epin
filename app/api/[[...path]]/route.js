@@ -457,9 +457,9 @@ function verifyAdminToken(request) {
   const user = verifyToken(request);
   if (!user) return null;
   
-  // Admin tokens have 'username' field, user tokens have 'type' field
-  if (user.type === 'user') {
-    return null; // Reject user tokens
+  // Check if user has admin role
+  if (user.role !== 'admin') {
+    return null; // Reject non-admin users
   }
   
   return user;
