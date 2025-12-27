@@ -80,7 +80,7 @@ export default function ReviewsPage() {
       const result = await response.json();
       if (result.success) {
         toast.success('Yorum eklendi!');
-        setNewReview({ userName: '', rating: 5, comment: '', approved: true });
+        setNewReview({ userName: '', rating: 5, comment: '', approved: true, customDate: '' });
         setShowForm(false);
         loadReviews();
       } else {
