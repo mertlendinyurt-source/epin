@@ -443,13 +443,13 @@ export default function App() {
                       <Info className="w-2.5 h-2.5 text-white" />
                     </div>
 
-                    <div className="relative h-28 md:h-32 overflow-hidden flex items-center justify-center bg-gradient-to-br from-zinc-900/30 to-zinc-950/30">
+                    <div className="relative h-36 md:h-40 overflow-hidden flex items-center justify-center bg-gradient-to-br from-zinc-900/30 to-zinc-950/30 p-3">
                       <img 
-                        src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=150&h=150&fit=crop"}
+                        src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=200&h=200&fit=crop"}
                         alt={product.title}
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain opacity-85"
+                        className="w-full h-full object-contain"
                         onError={(e) => {
-                          e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=150&h=150&fit=crop";
+                          e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=200&h=200&fit=crop";
                         }}
                       />
                     </div>
@@ -582,11 +582,14 @@ export default function App() {
                     <div>
                       <Label className="text-sm md:text-base text-white/80 uppercase mb-4 block">Ürün</Label>
                       <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded flex items-center justify-center bg-[#12161D]">
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg flex items-center justify-center bg-[#12161D] overflow-hidden p-2">
                           <img 
-                            src="https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=100&h=100&fit=crop"
-                            alt="UC"
-                            className="w-10 h-10 md:w-12 md:h-12 object-contain opacity-70"
+                            src={selectedProduct.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=100&h=100&fit=crop"}
+                            alt={selectedProduct.title}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=100&h=100&fit=crop";
+                            }}
                           />
                         </div>
                         <div className="flex-1">
