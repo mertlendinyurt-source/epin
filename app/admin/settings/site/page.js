@@ -32,8 +32,6 @@ export default function SiteSettingsPage() {
     checkAuth();
     loadSettings();
   }, []);
-    loadSettings();
-  }, []);
 
   const checkAuth = () => {
     const token = localStorage.getItem('adminToken');
