@@ -82,13 +82,77 @@ export default function AdminProducts() {
       discountPercent: product.discountPercent.toString(),
       active: product.active,
       sortOrder: product.sortOrder.toString(),
-      image: product.image
+      imageUrl: product.imageUrl || ''
     })
+    setImagePreview(product.imageUrl || null)
+    setImageFile(null)
     setEditDialogOpen(true)
+  }
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Dosya boyutu 2MB\'dan büyük olamaz')
+      return
+    }
+
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleImageUpload = async () => {
+    if (!imageFile) return null
+
+    setUploadingImage(true)
+
+    try {
+      const token = localStorage.getItem('adminToken')
+      const formData = new FormData()
+      formData.append('file', imageFile)
+      formData.append('category', 'product')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        return result.data.url
+      } else {
+        toast.error(result.error || 'Görsel yüklenemedi')
+        return null
+      }
+    } catch (error) {
+      console.error('Image upload error:', error)
+      toast.error('Görsel yükleme hatası')
+      return null
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const handleSave = async () => {
     try {
+      // Upload image first if selected
+      let imageUrl = formData.imageUrl
+      if (imageFile) {
+        const uploadedUrl = await handleImageUpload()
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl
+        }
+      }
+
       const token = localStorage.getItem('adminToken')
       const response = await fetch(`/api/admin/products/${editingProduct.id}`, {
         method: 'PUT',
