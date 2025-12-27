@@ -1736,6 +1736,91 @@ export async function POST(request) {
       });
     }
 
+    // Admin: Create legal page
+    if (pathname === '/api/admin/legal-pages') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const { title, slug, content, effectiveDate, isActive, order } = body;
+
+      if (!title || !slug) {
+        return NextResponse.json(
+          { success: false, error: 'Başlık ve slug zorunludur' },
+          { status: 400 }
+        );
+      }
+
+      // Check if slug already exists
+      const existing = await db.collection('legal_pages').findOne({ slug });
+      if (existing) {
+        return NextResponse.json(
+          { success: false, error: 'Bu slug zaten kullanılıyor' },
+          { status: 400 }
+        );
+      }
+
+      const page = {
+        id: uuidv4(),
+        title,
+        slug,
+        content: content || '',
+        effectiveDate: effectiveDate ? new Date(effectiveDate) : new Date(),
+        isActive: isActive !== false,
+        order: order || 0,
+        createdBy: user.username,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await db.collection('legal_pages').insertOne(page);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Sayfa oluşturuldu',
+        data: page
+      });
+    }
+
+    // Admin: Save footer settings
+    if (pathname === '/api/admin/footer-settings') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const { quickLinks, categories, corporateLinks } = body;
+
+      // Deactivate previous settings
+      await db.collection('footer_settings').updateMany({}, { $set: { active: false } });
+
+      const settings = {
+        id: uuidv4(),
+        quickLinks: quickLinks || [],
+        categories: categories || [],
+        corporateLinks: corporateLinks || [],
+        active: true,
+        updatedBy: user.username,
+        updatedAt: new Date(),
+        createdAt: new Date()
+      };
+
+      await db.collection('footer_settings').insertOne(settings);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Footer ayarları güncellendi',
+        data: settings
+      });
+    }
+
     return NextResponse.json(
       { success: false, error: 'Endpoint bulunamadı' },
       { status: 404 }
