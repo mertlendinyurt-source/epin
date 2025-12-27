@@ -539,6 +539,52 @@ export async function GET(request) {
       });
     }
 
+    // Public: Get enabled regions (for frontend filter)
+    if (pathname === '/api/regions') {
+      let regions = await db.collection('regions').find({ enabled: true }).sort({ sortOrder: 1 }).toArray();
+      
+      // If no regions exist, return default regions
+      if (regions.length === 0) {
+        regions = [
+          { id: 'tr', code: 'TR', name: 'Türkiye', enabled: true, flagImageUrl: null, sortOrder: 1 },
+          { id: 'global', code: 'GLOBAL', name: 'Küresel', enabled: true, flagImageUrl: null, sortOrder: 2 },
+          { id: 'de', code: 'DE', name: 'Almanya', enabled: true, flagImageUrl: null, sortOrder: 3 },
+          { id: 'fr', code: 'FR', name: 'Fransa', enabled: true, flagImageUrl: null, sortOrder: 4 },
+          { id: 'jp', code: 'JP', name: 'Japonya', enabled: true, flagImageUrl: null, sortOrder: 5 }
+        ];
+      }
+      
+      return NextResponse.json({ success: true, data: regions });
+    }
+
+    // Admin: Get all regions (including disabled)
+    if (pathname === '/api/admin/settings/regions') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      let regions = await db.collection('regions').find({}).sort({ sortOrder: 1 }).toArray();
+      
+      // If no regions exist, initialize with defaults
+      if (regions.length === 0) {
+        const defaultRegions = [
+          { id: uuidv4(), code: 'TR', name: 'Türkiye', enabled: true, flagImageUrl: null, sortOrder: 1, createdAt: new Date() },
+          { id: uuidv4(), code: 'GLOBAL', name: 'Küresel', enabled: true, flagImageUrl: null, sortOrder: 2, createdAt: new Date() },
+          { id: uuidv4(), code: 'DE', name: 'Almanya', enabled: true, flagImageUrl: null, sortOrder: 3, createdAt: new Date() },
+          { id: uuidv4(), code: 'FR', name: 'Fransa', enabled: true, flagImageUrl: null, sortOrder: 4, createdAt: new Date() },
+          { id: uuidv4(), code: 'JP', name: 'Japonya', enabled: true, flagImageUrl: null, sortOrder: 5, createdAt: new Date() }
+        ];
+        await db.collection('regions').insertMany(defaultRegions);
+        regions = defaultRegions;
+      }
+      
+      return NextResponse.json({ success: true, data: regions });
+    }
+
     return NextResponse.json(
       { success: false, error: 'Endpoint bulunamadı' },
       { status: 404 }
