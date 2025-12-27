@@ -44,6 +44,19 @@ function verifyToken(request) {
   }
 }
 
+// Verify Admin Token (requires username field, not type)
+function verifyAdminToken(request) {
+  const user = verifyToken(request);
+  if (!user) return null;
+  
+  // Admin tokens have 'username' field, user tokens have 'type' field
+  if (user.type === 'user') {
+    return null; // Reject user tokens
+  }
+  
+  return user;
+}
+
 // Initialize DB with default data
 async function initializeDb() {
   const db = await getDb();
