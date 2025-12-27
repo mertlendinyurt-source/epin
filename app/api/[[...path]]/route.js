@@ -1575,6 +1575,82 @@ export async function POST(request) {
       });
     }
 
+    // Admin: Save game content
+    if (pathname === '/api/admin/content/pubg') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const { title, description, defaultRating, defaultReviewCount } = body;
+
+      await db.collection('game_content').updateOne(
+        { game: 'pubg' },
+        {
+          $set: {
+            game: 'pubg',
+            title: title || 'PUBG Mobile',
+            description: description || '',
+            defaultRating: defaultRating || 5.0,
+            defaultReviewCount: defaultReviewCount || 0,
+            updatedBy: user.username,
+            updatedAt: new Date()
+          }
+        },
+        { upsert: true }
+      );
+
+      const content = await db.collection('game_content').findOne({ game: 'pubg' });
+
+      return NextResponse.json({
+        success: true,
+        message: 'İçerik güncellendi',
+        data: content
+      });
+    }
+
+    // Admin: Add review
+    if (pathname === '/api/admin/reviews') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const { game, userName, rating, comment, approved } = body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return NextResponse.json(
+          { success: false, error: 'Puan 1-5 arasında olmalıdır' },
+          { status: 400 }
+        );
+      }
+
+      const review = {
+        id: uuidv4(),
+        game: game || 'pubg',
+        userName: userName || 'Misafir',
+        rating: parseInt(rating),
+        comment: comment || '',
+        approved: approved !== false,
+        createdBy: user.username,
+        createdAt: new Date()
+      };
+
+      await db.collection('reviews').insertOne(review);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Yorum eklendi',
+        data: review
+      });
+    }
+
     return NextResponse.json(
       { success: false, error: 'Endpoint bulunamadı' },
       { status: 404 }
