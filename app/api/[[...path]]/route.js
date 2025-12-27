@@ -2037,7 +2037,7 @@ export async function PUT(request) {
         { id: userId },
         { 
           $set: { 
-            password: hashedPassword,
+            passwordHash: hashedPassword,
             passwordChangedAt: new Date(),
             updatedAt: new Date()
           } 
@@ -2252,7 +2252,7 @@ export async function PUT(request) {
         { id: userId },
         { 
           $set: { 
-            password: hashedPassword,
+            passwordHash: hashedPassword,
             passwordChangedAt: new Date(),
             updatedAt: new Date()
           } 
