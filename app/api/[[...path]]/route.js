@@ -1925,7 +1925,7 @@ export async function POST(request) {
       });
     }
 
-    // User Login
+    // User Login - Unified for both users and admins
     if (pathname === '/api/auth/login') {
       const { email, password } = body;
 
@@ -1936,7 +1936,7 @@ export async function POST(request) {
         );
       }
 
-      // Find user
+      // Find user by email
       const user = await db.collection('users').findOne({ email: email.toLowerCase() });
       if (!user) {
         return NextResponse.json(
@@ -1962,11 +1962,23 @@ export async function POST(request) {
         );
       }
 
-      // Generate JWT token
+      // Check if user is banned/inactive
+      if (user.isActive === false || user.banned === true) {
+        return NextResponse.json(
+          { success: false, error: 'Hesabınız askıya alınmış. Destek ile iletişime geçin.', code: 'ACCOUNT_SUSPENDED' },
+          { status: 403 }
+        );
+      }
+
+      // Determine user role (default: user)
+      const userRole = user.role || 'user';
+
+      // Generate JWT token with role included
       const token = jwt.sign(
         { 
           id: user.id, 
           email: user.email,
+          role: userRole,
           type: 'user'
         },
         JWT_SECRET,
@@ -1983,7 +1995,9 @@ export async function POST(request) {
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
-            authProvider: user.authProvider || 'local'
+            role: userRole,
+            authProvider: user.authProvider || 'local',
+            avatarUrl: user.avatarUrl || null
           }
         }
       });
