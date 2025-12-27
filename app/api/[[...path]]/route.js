@@ -957,7 +957,8 @@ export async function GET(request) {
           contactPhone: settings?.contactPhone || '',
           dailyBannerEnabled: settings?.dailyBannerEnabled !== false,
           dailyBannerTitle: settings?.dailyBannerTitle || 'Bugüne Özel Fiyatlar',
-          dailyBannerSubtitle: settings?.dailyBannerSubtitle || ''
+          dailyBannerSubtitle: settings?.dailyBannerSubtitle || '',
+          dailyBannerIcon: settings?.dailyBannerIcon || 'fire'
         }
       });
     }
