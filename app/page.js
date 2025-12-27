@@ -666,7 +666,7 @@ export default function App() {
                         <div className="flex-1">
                           <div className="text-xl md:text-2xl font-bold text-white mb-2">{selectedProduct.title}</div>
                           <div className="flex items-center gap-1.5 text-xs md:text-sm font-bold text-white mb-1">
-                            <span>🇹🇷 TÜRKİYE</span>
+                            <RegionDisplay regionCode={selectedProduct.regionCode || 'TR'} size="lg" />
                           </div>
                           <div className="text-[11px] md:text-xs text-green-400">Bölgenizde kullanılabilir</div>
                         </div>
