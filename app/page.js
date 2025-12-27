@@ -531,7 +531,7 @@ export default function App() {
                         {product.ucAmount} UC
                       </div>
                       <div className="flex items-center gap-1 text-[11px] md:text-xs font-bold text-white mb-0.5">
-                        <span>🇹🇷 TÜRKİYE</span>
+                        <RegionDisplay regionCode={product.regionCode || 'TR'} size="sm" />
                       </div>
                       <div className="text-[10px] text-[#32CD32] mb-2">Bölgenizde kullanılabilir</div>
                       <div>
