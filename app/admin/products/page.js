@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, LogOut, Plus, Pencil, Trash2 } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, LogOut, Plus, Pencil, Trash2, X, Copy, Upload, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -20,6 +20,9 @@ export default function AdminProducts() {
   const [products, setProducts] = useState([])
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [stockDialogOpen, setStockDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [selectedProductForStock, setSelectedProductForStock] = useState(null)
   const [stockData, setStockData] = useState({ items: '', summary: null })
@@ -27,6 +30,9 @@ export default function AdminProducts() {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [priceErrors, setPriceErrors] = useState({})
+  const [lastEditedField, setLastEditedField] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     ucAmount: '',
