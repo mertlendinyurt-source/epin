@@ -269,9 +269,17 @@ export default function App() {
       <header className="h-[60px] bg-[#1a1a1a] border-b border-white/5">
         <div className="h-full max-w-[1920px] mx-auto px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
-            <div className="w-8 h-8 md:w-9 md:h-9 rounded bg-blue-600 flex items-center justify-center font-black text-xs md:text-sm text-white">
-              UC
-            </div>
+            {siteSettings?.logo ? (
+              <img 
+                src={`${siteSettings.logo}?v=${Date.now()}`} 
+                alt="Logo" 
+                className="h-8 md:h-9 object-contain"
+              />
+            ) : (
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded bg-blue-600 flex items-center justify-center font-black text-xs md:text-sm text-white">
+                UC
+              </div>
+            )}
             <span className="text-white font-semibold text-base md:text-lg">PUBG UC</span>
           </div>
             
