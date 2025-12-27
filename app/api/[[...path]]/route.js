@@ -1607,6 +1607,159 @@ export async function POST(request) {
       });
     }
 
+    // Admin: Save email settings
+    if (pathname === '/api/admin/email/settings') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const { enableEmail, fromName, fromEmail, smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, testRecipientEmail } = body;
+      
+      // Get existing settings to preserve encrypted password if not changed
+      const existingSettings = await db.collection('email_settings').findOne({ id: 'main' });
+      
+      let encryptedPassword = existingSettings?.smtpPass || '';
+      
+      // Only encrypt if password changed (not masked value)
+      if (smtpPass && smtpPass !== '••••••••') {
+        encryptedPassword = encrypt(smtpPass);
+      }
+
+      await db.collection('email_settings').updateOne(
+        { id: 'main' },
+        {
+          $set: {
+            id: 'main',
+            enableEmail: enableEmail || false,
+            fromName: fromName || '',
+            fromEmail: fromEmail || '',
+            smtpHost: smtpHost || '',
+            smtpPort: smtpPort || '587',
+            smtpSecure: smtpSecure || false,
+            smtpUser: smtpUser || '',
+            smtpPass: encryptedPassword,
+            testRecipientEmail: testRecipientEmail || '',
+            updatedAt: new Date(),
+            updatedBy: user.username
+          }
+        },
+        { upsert: true }
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'E-posta ayarları kaydedildi'
+      });
+    }
+
+    // Admin: Send test email
+    if (pathname === '/api/admin/email/test') {
+      const adminUser = verifyAdminToken(request);
+      if (!adminUser) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const settings = await getEmailSettings(db);
+      
+      if (!settings || !settings.enableEmail) {
+        return NextResponse.json(
+          { success: false, error: 'E-posta gönderimi devre dışı veya yapılandırılmamış' },
+          { status: 400 }
+        );
+      }
+
+      if (!settings.testRecipientEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Test alıcı e-posta adresi belirtilmemiş' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        const transporter = await createTransporter(settings);
+        if (!transporter) {
+          return NextResponse.json(
+            { success: false, error: 'SMTP bağlantısı kurulamadı' },
+            { status: 500 }
+          );
+        }
+
+        // Get site settings for template
+        const siteSettings = await db.collection('site_settings').findOne({ id: 'main' });
+
+        const testContent = {
+          subject: '🧪 Test E-postası - PUBG UC Store',
+          title: 'Test E-postası Başarılı!',
+          body: `
+            <p>Merhaba,</p>
+            <p>Bu bir test e-postasıdır. E-posta sisteminiz doğru yapılandırılmış ve çalışıyor!</p>
+            <p><strong>SMTP Bilgileri:</strong></p>
+            <ul style="color: #a1a1aa;">
+              <li>Host: ${settings.smtpHost}</li>
+              <li>Port: ${settings.smtpPort}</li>
+              <li>Güvenli: ${settings.smtpSecure ? 'Evet' : 'Hayır'}</li>
+              <li>Gönderen: ${settings.fromEmail}</li>
+            </ul>
+            <p style="margin-top: 20px; color: #22c55e;">✅ E-posta sistemi çalışıyor!</p>
+          `,
+          info: 'Bu e-posta admin panelinden gönderilen bir test mesajıdır.'
+        };
+
+        const html = generateEmailTemplate(testContent, {
+          logoUrl: siteSettings?.logoUrl,
+          siteName: siteSettings?.siteName || 'PUBG UC Store'
+        });
+
+        await transporter.sendMail({
+          from: `"${settings.fromName}" <${settings.fromEmail}>`,
+          to: settings.testRecipientEmail,
+          subject: testContent.subject,
+          html
+        });
+
+        // Log test email
+        await db.collection('email_logs').insertOne({
+          id: uuidv4(),
+          type: 'test',
+          userId: 'admin',
+          to: settings.testRecipientEmail,
+          status: 'sent',
+          createdAt: new Date()
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `Test e-postası ${settings.testRecipientEmail} adresine gönderildi`
+        });
+
+      } catch (error) {
+        console.error('Test email error:', error.message);
+        
+        // Log failed attempt
+        await db.collection('email_logs').insertOne({
+          id: uuidv4(),
+          type: 'test',
+          userId: 'admin',
+          to: settings.testRecipientEmail,
+          status: 'failed',
+          error: error.message,
+          createdAt: new Date()
+        });
+
+        return NextResponse.json(
+          { success: false, error: `E-posta gönderilemedi: ${error.message}` },
+          { status: 500 }
+        );
+      }
+    }
+
     // User Register
     if (pathname === '/api/auth/register') {
       const { firstName, lastName, email, phone, password } = body;
