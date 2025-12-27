@@ -34,7 +34,7 @@ export default function AdminTicketDetail() {
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
     if (!token) {
       router.push('/admin/login')
       return
@@ -48,12 +48,12 @@ export default function AdminTicketDetail() {
 
   const fetchTicket = async () => {
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch(`/api/admin/support/tickets/${params.ticketId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('adminToken')
         router.push('/admin/login')
         return
@@ -87,7 +87,7 @@ export default function AdminTicketDetail() {
 
     setSending(true)
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch(`/api/admin/support/tickets/${params.ticketId}/messages`, {
         method: 'POST',
         headers: {
@@ -118,7 +118,7 @@ export default function AdminTicketDetail() {
 
     setClosing(true)
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch(`/api/admin/support/tickets/${params.ticketId}/close`, {
         method: 'POST',
         headers: {

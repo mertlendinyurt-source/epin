@@ -31,7 +31,7 @@ export default function AdminSupport() {
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
     if (!token) {
       router.push('/admin/login')
       return
@@ -41,7 +41,7 @@ export default function AdminSupport() {
 
   const fetchTickets = async () => {
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const url = statusFilter 
         ? `/api/admin/support/tickets?status=${statusFilter}` 
         : '/api/admin/support/tickets'
@@ -50,7 +50,7 @@ export default function AdminSupport() {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('adminToken')
         router.push('/admin/login')
         return

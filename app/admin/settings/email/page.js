@@ -38,7 +38,7 @@ export default function EmailSettings() {
   })
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
     if (!token) {
       router.push('/admin/login')
       return
@@ -49,12 +49,12 @@ export default function EmailSettings() {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch('/api/admin/email/settings', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('adminToken')
         router.push('/admin/login')
         return
@@ -74,7 +74,7 @@ export default function EmailSettings() {
 
   const fetchLogs = async () => {
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch('/api/admin/email/logs', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -91,7 +91,7 @@ export default function EmailSettings() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch('/api/admin/email/settings', {
         method: 'POST',
         headers: {
@@ -123,7 +123,7 @@ export default function EmailSettings() {
 
     setTesting(true)
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch('/api/admin/email/test', {
         method: 'POST',
         headers: {

@@ -25,7 +25,7 @@ export default function PaymentSettingsPage() {
   }, []);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
     }
@@ -33,14 +33,14 @@ export default function PaymentSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/settings/payments', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }
@@ -69,7 +69,7 @@ export default function PaymentSettingsPage() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/settings/payments', {
         method: 'POST',
         headers: {
@@ -79,7 +79,7 @@ export default function PaymentSettingsPage() {
         body: JSON.stringify(formData)
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }

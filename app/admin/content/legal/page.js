@@ -25,7 +25,7 @@ export default function LegalPagesAdmin() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
       return;
@@ -35,12 +35,12 @@ export default function LegalPagesAdmin() {
 
   const loadPages = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/legal-pages', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }
@@ -103,7 +103,7 @@ export default function LegalPagesAdmin() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const isNew = editingPage === 'new';
       
       const response = await fetch(
@@ -138,7 +138,7 @@ export default function LegalPagesAdmin() {
     if (!confirm('Bu sayfayı silmek istediğinize emin misiniz?')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/legal-pages/${pageId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -159,7 +159,7 @@ export default function LegalPagesAdmin() {
 
   const handleToggleActive = async (page) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/legal-pages/${page.id}`, {
         method: 'PUT',
         headers: {

@@ -17,7 +17,7 @@ export default function RegionsSettingsPage() {
   const [uploadingRegionId, setUploadingRegionId] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
       return;
@@ -27,12 +27,12 @@ export default function RegionsSettingsPage() {
 
   const loadRegions = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/settings/regions', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }
@@ -66,7 +66,7 @@ export default function RegionsSettingsPage() {
     setUploadingRegionId(regionId);
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const formData = new FormData();
       formData.append('file', file);
       formData.append('category', 'flags');
@@ -143,7 +143,7 @@ export default function RegionsSettingsPage() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/settings/regions', {
         method: 'POST',
         headers: {

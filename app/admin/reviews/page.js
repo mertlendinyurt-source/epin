@@ -24,7 +24,7 @@ export default function ReviewsPage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
       return;
@@ -34,12 +34,12 @@ export default function ReviewsPage() {
 
   const loadReviews = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/reviews?game=pubg', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }
@@ -64,7 +64,7 @@ export default function ReviewsPage() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/reviews', {
         method: 'POST',
         headers: {
@@ -98,7 +98,7 @@ export default function ReviewsPage() {
     if (!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/reviews/${reviewId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

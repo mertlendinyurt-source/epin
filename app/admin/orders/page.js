@@ -20,7 +20,7 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
     if (!token) {
       router.push('/admin/login')
       return
@@ -38,12 +38,12 @@ export default function AdminOrders() {
 
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken')
       const response = await fetch('/api/admin/orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('adminToken')
         router.push('/admin/login')
         return

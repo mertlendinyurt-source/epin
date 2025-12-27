@@ -21,7 +21,7 @@ export default function PubgContentPage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
       return;
@@ -31,12 +31,12 @@ export default function PubgContentPage() {
 
   const loadContent = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/content/pubg', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }
@@ -56,7 +56,7 @@ export default function PubgContentPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/content/pubg', {
         method: 'POST',
         headers: {

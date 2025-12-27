@@ -26,7 +26,7 @@ export default function FooterSettingsPage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
       return;
@@ -36,7 +36,7 @@ export default function FooterSettingsPage() {
 
   const loadData = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       
       // Load legal pages
       const pagesRes = await fetch('/api/admin/legal-pages', {
@@ -66,7 +66,7 @@ export default function FooterSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/footer-settings', {
         method: 'POST',
         headers: {

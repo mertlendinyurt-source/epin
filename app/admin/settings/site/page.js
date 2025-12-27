@@ -34,7 +34,7 @@ export default function SiteSettingsPage() {
   const [previews, setPreviews] = useState({ logo: null, favicon: null, heroImage: null, categoryIcon: null });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
     if (!token) {
       router.push('/admin/login');
       return;
@@ -44,12 +44,12 @@ export default function SiteSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/settings/site', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         router.push('/admin/login');
         return;
       }
@@ -92,7 +92,7 @@ export default function SiteSettingsPage() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const fd = new FormData();
       fd.append('file', uploads[type]);
       fd.append('category', type);
@@ -158,7 +158,7 @@ export default function SiteSettingsPage() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/settings/site', {
         method: 'POST',
         headers: {
