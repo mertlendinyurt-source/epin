@@ -365,6 +365,71 @@ export default function SiteSettingsPage() {
               </div>
             </div>
 
+            {/* Daily Banner Settings */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                </svg>
+                Günlük Banner
+              </h3>
+
+              <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                <div>
+                  <Label className="text-white font-medium">Banner Aktif</Label>
+                  <p className="text-slate-400 text-sm mt-1">Hero altında "Bugüne Özel Fiyatlar" banner'ı</p>
+                </div>
+                <button
+                  onClick={() => setSettings({ ...settings, dailyBannerEnabled: !settings.dailyBannerEnabled })}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${settings.dailyBannerEnabled ? 'bg-blue-600' : 'bg-slate-700'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${settings.dailyBannerEnabled ? 'translate-x-6' : ''}`} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300">Banner Başlığı</Label>
+                <Input
+                  value={settings.dailyBannerTitle || ''}
+                  onChange={(e) => setSettings({ ...settings, dailyBannerTitle: e.target.value })}
+                  placeholder="Bugüne Özel Fiyatlar"
+                  className="bg-slate-800 border-slate-700 text-white"
+                  disabled={!settings.dailyBannerEnabled}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300">Alt Metin (Opsiyonel)</Label>
+                <Input
+                  value={settings.dailyBannerSubtitle || ''}
+                  onChange={(e) => setSettings({ ...settings, dailyBannerSubtitle: e.target.value })}
+                  placeholder="Boş bırakılırsa bugünün tarihi gösterilir"
+                  className="bg-slate-800 border-slate-700 text-white"
+                  disabled={!settings.dailyBannerEnabled}
+                />
+                <p className="text-slate-500 text-xs">Boş bırakılırsa otomatik olarak bugünün tarihi gösterilir</p>
+              </div>
+
+              {/* Banner Preview */}
+              {settings.dailyBannerEnabled && (
+                <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-[#1a1f35] via-[#252d4a] to-[#1a1f35] border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🔥</span>
+                      <div>
+                        <p className="text-white font-semibold">{settings.dailyBannerTitle || 'Bugüne Özel Fiyatlar'}</p>
+                        <p className="text-white/60 text-sm">
+                          {settings.dailyBannerSubtitle || new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-yellow-400 bg-yellow-500/20 px-3 py-1 rounded-full border border-yellow-500/30">Günlük Kampanya</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Save Button */}
             <Button
               onClick={handleSaveSettings}
