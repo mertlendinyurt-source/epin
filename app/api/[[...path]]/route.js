@@ -3097,6 +3097,11 @@ export async function PUT(request) {
         }
       );
 
+      // Send password changed email
+      sendPasswordChangedEmail(db, user).catch(err => 
+        console.error('Password changed email failed:', err)
+      );
+
       return NextResponse.json({
         success: true,
         message: 'Şifreniz başarıyla güncellendi'
@@ -3310,6 +3315,11 @@ export async function PUT(request) {
             updatedAt: new Date()
           } 
         }
+      );
+
+      // Send password changed email
+      sendPasswordChangedEmail(db, user).catch(err => 
+        console.error('Password changed email failed:', err)
       );
 
       return NextResponse.json({
