@@ -2005,6 +2005,11 @@ export async function POST(request) {
 
       await db.collection('orders').insertOne(order);
 
+      // Send order created email (async, don't block response)
+      sendOrderCreatedEmail(db, order, user, product).catch(err => 
+        console.error('Order created email failed:', err)
+      );
+
       // Generate random string for Shopier request
       const randomNr = uuidv4().replace(/-/g, '').substring(0, 16);
 
