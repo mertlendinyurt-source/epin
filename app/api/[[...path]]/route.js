@@ -1373,6 +1373,61 @@ export async function POST(request) {
       });
     }
 
+    // Admin: Save regions settings
+    if (pathname === '/api/admin/settings/regions') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const { regions } = body;
+
+      if (!regions || !Array.isArray(regions)) {
+        return NextResponse.json(
+          { success: false, error: 'Geçersiz region verisi' },
+          { status: 400 }
+        );
+      }
+
+      // Validate each region
+      for (const region of regions) {
+        if (!region.code || !region.name) {
+          return NextResponse.json(
+            { success: false, error: 'Her region için code ve name zorunludur' },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Delete all existing regions and insert new ones
+      await db.collection('regions').deleteMany({});
+      
+      const regionsToInsert = regions.map((region, index) => ({
+        id: region.id || uuidv4(),
+        code: region.code,
+        name: region.name,
+        enabled: region.enabled !== false,
+        flagImageUrl: region.flagImageUrl || null,
+        sortOrder: region.sortOrder || index + 1,
+        updatedBy: user.username,
+        updatedAt: new Date(),
+        createdAt: region.createdAt || new Date()
+      }));
+
+      if (regionsToInsert.length > 0) {
+        await db.collection('regions').insertMany(regionsToInsert);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Region ayarları güncellendi',
+        data: regionsToInsert
+      });
+    }
+
     return NextResponse.json(
       { success: false, error: 'Endpoint bulunamadı' },
       { status: 404 }
