@@ -26,7 +26,9 @@ export default function SiteSettingsPage() {
     dailyBannerEnabled: true,
     dailyBannerTitle: 'Bugüne Özel Fiyatlar',
     dailyBannerSubtitle: '',
-    dailyBannerIcon: 'fire'
+    dailyBannerIcon: 'fire',
+    dailyCountdownEnabled: true,
+    dailyCountdownLabel: 'Kampanya bitimine'
   });
   const [uploads, setUploads] = useState({ logo: null, favicon: null, heroImage: null, categoryIcon: null });
   const [previews, setPreviews] = useState({ logo: null, favicon: null, heroImage: null, categoryIcon: null });
