@@ -539,99 +539,123 @@ backend:
 
   - task: "User Support Tickets - Create Ticket"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "POST /api/support/tickets implemented. Creates ticket with subject, category, message. Sets status=waiting_admin, userCanReply=false. Rate limited (3 per 10 min). Creates initial message. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "POST /api/support/tickets working perfectly. Creates tickets with status=waiting_admin, userCanReply=false. Validates required fields (subject min 5 chars, message min 10 chars, valid categories: odeme/teslimat/hesap/diger). Rate limiting working correctly (3 tickets per 10 minutes, returns 429). Creates initial message in ticket_messages collection. All validation scenarios tested successfully."
 
   - task: "User Support Tickets - List Tickets"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/support/tickets returns user's tickets sorted by updatedAt. Requires JWT auth. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "GET /api/support/tickets working correctly. Requires JWT authentication (returns 401 without token). Returns only user's own tickets filtered by userId. Tickets sorted by updatedAt descending. Security verified - users cannot see other users' tickets."
 
   - task: "User Support Tickets - Get Single Ticket"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/support/tickets/:ticketId returns ticket + messages. Security: user can only see own tickets. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "GET /api/support/tickets/:ticketId working correctly. Requires JWT authentication (401 without token). Security: users can only access their own tickets (404 for other users' tickets). Returns ticket data with messages array sorted by createdAt. Handles non-existent tickets properly (404)."
 
   - task: "User Support Tickets - Send Message"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "POST /api/support/tickets/:ticketId/messages. RULE: Returns 403 if userCanReply=false (admin yanıtı bekleniyor). On success sets userCanReply=false, status=waiting_admin. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "POST /api/support/tickets/:ticketId/messages working correctly. CRITICAL RULE VERIFIED: Returns 403 with message 'Admin yanıtı bekleniyor. Şu anda mesaj gönderemezsiniz.' when userCanReply=false. Requires JWT auth (401 without token). Validates message length (min 2 chars). After user sends message: status=waiting_admin, userCanReply=false. Prevents messages to closed tickets (403)."
 
   - task: "Admin Support Tickets - List All Tickets"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/admin/support/tickets with optional status filter. Returns tickets with user info (email, name). Requires admin JWT. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "GET /api/admin/support/tickets working correctly. Requires admin JWT authentication (401 without admin token, rejects user tokens). Returns all tickets with user info (userEmail, userName). Status filter working (?status=waiting_admin). User info properly populated from users collection. Sorted by updatedAt descending."
 
   - task: "Admin Support Tickets - Get Single Ticket"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/admin/support/tickets/:ticketId returns ticket + messages + user info. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "GET /api/admin/support/tickets/:ticketId working correctly. Requires admin JWT authentication (401 without admin token). Returns ticket with user info (userEmail, userName) and messages array. Messages sorted by createdAt ascending. Handles non-existent tickets (404)."
 
   - task: "Admin Support Tickets - Reply"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "POST /api/admin/support/tickets/:ticketId/messages. Sets status=waiting_user, userCanReply=true (enables user to respond). Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "POST /api/admin/support/tickets/:ticketId/messages working correctly. CRITICAL RULE VERIFIED: Admin reply sets status=waiting_user, userCanReply=true (enables user to respond). Requires admin JWT auth (401 without admin token). Validates message length (min 2 chars). Creates message with sender='admin', adminUsername field. After admin reply, user can send exactly 1 message before userCanReply becomes false again."
 
   - task: "Admin Support Tickets - Close Ticket"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "POST /api/admin/support/tickets/:ticketId/close. Sets status=closed, userCanReply=false. Needs testing."
+      - working: true
+        agent: "testing"
+        comment: "POST /api/admin/support/tickets/:ticketId/close working correctly. Requires admin JWT authentication (401 without admin token). Sets status=closed, userCanReply=false, closedBy=admin.username, closedAt=timestamp. Users cannot send messages to closed tickets (403). Minor: Error message shows 'Admin yanıtı bekleniyor' instead of 'Bu talep kapatılmış' due to userCanReply check order, but functionality correct."
 
 frontend:
   - task: "Auth Modal (Register + Login)"
