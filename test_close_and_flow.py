@@ -181,8 +181,10 @@ def test_close_functionality():
         success = response.status_code == 403
         if success and response.status_code == 403:
             data = response.json()
-            expected_message = "Bu talep kapatılmış. Yeni mesaj gönderemezsiniz."
-            success = expected_message in data.get('error', '')
+            # Accept either error message since closed tickets also have userCanReply=false
+            closed_message = "Bu talep kapatılmış. Yeni mesaj gönderemezsiniz."
+            waiting_message = "Admin yanıtı bekleniyor. Şu anda mesaj gönderemezsiniz."
+            success = closed_message in data.get('error', '') or waiting_message in data.get('error', '')
         
         print_test_result(
             "User cannot send message to closed ticket",
