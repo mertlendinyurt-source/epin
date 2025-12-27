@@ -538,36 +538,84 @@ backend:
         comment: "Out of stock scenario handling working correctly. When PAID callback received but no stock available for product, order delivery.status set to 'pending' with message 'Stok bekleniyor'. Order status still changes to 'paid'. No stock assigned (delivery.items empty array). System gracefully handles stock shortage without errors."
 
 frontend:
-  - task: "Frontend UI"
+  - task: "Auth Modal (Register + Login)"
+    implemented: true
+    working: "NA"
+    file: "components/AuthModal.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "AuthModal component created with register and login tabs. Validates all fields, handles email uniqueness, saves JWT token to localStorage, triggers onSuccess callback. Integrated into main page."
+
+  - task: "Header Auth Buttons + User Dropdown"
     implemented: true
     working: "NA"
     file: "app/page.js"
     stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: "NA"
-        agent: "testing"
-        comment: "Frontend testing not performed as per testing agent protocol. Only backend API testing completed."
+        agent: "main"
+        comment: "Header updated with conditional rendering: not logged in shows 'Giriş Yap' and 'Kayıt Ol' buttons, logged in shows user dropdown with 'Siparişlerim' and 'Çıkış Yap'. Logout clears token and reloads page."
+
+  - task: "Customer Orders List Page"
+    implemented: true
+    working: "NA"
+    file: "app/account/orders/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Customer orders list page created at /account/orders. Shows payment status and delivery status badges. Clickable rows navigate to order detail. Auth required, redirects to home if no token. Shows empty state if no orders."
+
+  - task: "Order Detail Page with Delivery Codes"
+    implemented: true
+    working: "NA"
+    file: "app/account/orders/[orderId]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Order detail page created with premium UI. Shows delivery codes if status='delivered' with copy button and show/hide toggle. Shows 'Stok bekleniyor' message if status='pending'. 2-column layout (desktop), responsive for mobile. Auth required, user can only view own orders."
+
+  - task: "Admin Stock Management UI"
+    implemented: true
+    working: "NA"
+    file: "app/admin/products/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Stock management dialog added to admin products page. Shows stock summary (total/available/assigned). Textarea for bulk stock addition (one code per line). Integrates with POST /api/admin/products/:productId/stock endpoint. Shows helpful info about auto-assignment."
 
 metadata:
   created_by: "testing_agent"
-  version: "3.0"
-  test_sequence: 3
-  run_ui: false
-  last_updated: "2025-12-26 23:45:00"
+  version: "4.0"
+  test_sequence: 4
+  run_ui: true
+  last_updated: "2025-12-27 01:05:00"
 
 test_plan:
   current_focus:
-    - "Auth + Stock + Delivery system testing completed"
+    - "Frontend UI testing - Auth flow, customer panel, admin stock management, responsive design"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
-  completed: true
+  completed: false
 
 agent_communication:
-  - agent: "testing"
-    message: "Backend API testing completed successfully. All 42 tests passed (100% success rate). Tested all public endpoints (health check, products, player resolver, orders, payment callback) and all admin endpoints (login, dashboard, orders management, products management). Authentication, authorization, validation, and database operations all working correctly. No critical issues found. Backend is production-ready."
+  - agent: "main"
+    message: "Frontend implementation complete. Auth modal, customer panel (/account/orders + detail page), admin stock UI all implemented with premium design. Backend tests passed (10/10). Ready for frontend UI testing. Need to verify: auth modal opens on checkout without login, register/login flow works, order codes visible and copyable, stock management UI functional, responsive design (375px+)."
   - agent: "testing"
     message: "Production Shopier integration security testing completed. 16 out of 17 tests passed (94% success rate). CRITICAL SECURITY FEATURES VERIFIED: ✅ AES-256-GCM encryption/decryption working correctly, ✅ Credentials stored encrypted in database (verified no plaintext), ✅ Masked credentials returned to frontend (API secret never exposed), ✅ Hash validation working (correct hashes accepted, incorrect rejected with 403), ✅ Security logs created on hash mismatch, ✅ Idempotency protection (duplicate callbacks ignored for PAID orders), ✅ Transaction ID uniqueness enforced, ✅ Immutable status transitions (FAILED→PAID rejected with 400), ✅ Valid transitions working (PENDING→PAID, PENDING→FAILED), ✅ No secrets in logs (API keys masked), ✅ Rate limiting working (10 req/hour, returns 429), ✅ Order creation reads from DB and decrypts credentials, ✅ Graceful failure when settings not configured (503). One test failed due to rate limiting being triggered (which proves rate limiting works). All security requirements met. Backend is production-ready and secure."
   - agent: "testing"
