@@ -877,6 +877,136 @@ PUBG Mobile, dünyanın en popüler battle royale oyunlarından biridir. Unknown
       return NextResponse.json({ success: true, data: orders });
     }
 
+    // User: Get my support tickets
+    if (pathname === '/api/support/tickets') {
+      const userData = verifyToken(request);
+      if (!userData) {
+        return NextResponse.json(
+          { success: false, error: 'Oturum açmanız gerekiyor' },
+          { status: 401 }
+        );
+      }
+
+      const userId = userData.id || userData.userId;
+      const tickets = await db.collection('tickets')
+        .find({ userId })
+        .sort({ updatedAt: -1 })
+        .toArray();
+
+      return NextResponse.json({ success: true, data: tickets });
+    }
+
+    // User: Get single ticket with messages
+    if (pathname.match(/^\/api\/support\/tickets\/[^\/]+$/)) {
+      const userData = verifyToken(request);
+      if (!userData) {
+        return NextResponse.json(
+          { success: false, error: 'Oturum açmanız gerekiyor' },
+          { status: 401 }
+        );
+      }
+
+      const ticketId = pathname.split('/').pop();
+      const userId = userData.id || userData.userId;
+      
+      const ticket = await db.collection('tickets').findOne({ id: ticketId, userId });
+      if (!ticket) {
+        return NextResponse.json(
+          { success: false, error: 'Talep bulunamadı' },
+          { status: 404 }
+        );
+      }
+
+      const messages = await db.collection('ticket_messages')
+        .find({ ticketId })
+        .sort({ createdAt: 1 })
+        .toArray();
+
+      return NextResponse.json({ 
+        success: true, 
+        data: { ticket, messages } 
+      });
+    }
+
+    // Admin: Get all support tickets
+    if (pathname === '/api/admin/support/tickets') {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const status = searchParams.get('status');
+      const query = status ? { status } : {};
+      
+      const tickets = await db.collection('tickets')
+        .find(query)
+        .sort({ updatedAt: -1 })
+        .toArray();
+
+      // Get user info for each ticket
+      const userIds = [...new Set(tickets.map(t => t.userId))];
+      const users = await db.collection('users')
+        .find({ id: { $in: userIds } })
+        .toArray();
+      const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+
+      const ticketsWithUser = tickets.map(t => ({
+        ...t,
+        userEmail: userMap[t.userId]?.email || 'Bilinmiyor',
+        userName: userMap[t.userId] 
+          ? `${userMap[t.userId].firstName || ''} ${userMap[t.userId].lastName || ''}`.trim() || userMap[t.userId].email
+          : 'Bilinmiyor'
+      }));
+
+      return NextResponse.json({ success: true, data: ticketsWithUser });
+    }
+
+    // Admin: Get single ticket with messages
+    if (pathname.match(/^\/api\/admin\/support\/tickets\/[^\/]+$/)) {
+      const user = verifyAdminToken(request);
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Yetkisiz erişim' },
+          { status: 401 }
+        );
+      }
+
+      const ticketId = pathname.split('/').pop();
+      const ticket = await db.collection('tickets').findOne({ id: ticketId });
+      
+      if (!ticket) {
+        return NextResponse.json(
+          { success: false, error: 'Talep bulunamadı' },
+          { status: 404 }
+        );
+      }
+
+      // Get user info
+      const ticketUser = await db.collection('users').findOne({ id: ticket.userId });
+      
+      const messages = await db.collection('ticket_messages')
+        .find({ ticketId })
+        .sort({ createdAt: 1 })
+        .toArray();
+
+      return NextResponse.json({ 
+        success: true, 
+        data: { 
+          ticket: {
+            ...ticket,
+            userEmail: ticketUser?.email || 'Bilinmiyor',
+            userName: ticketUser 
+              ? `${ticketUser.firstName || ''} ${ticketUser.lastName || ''}`.trim() || ticketUser.email
+              : 'Bilinmiyor'
+          },
+          messages 
+        } 
+      });
+    }
+
     return NextResponse.json(
       { success: false, error: 'Endpoint bulunamadı' },
       { status: 404 }
