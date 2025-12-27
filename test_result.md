@@ -889,6 +889,18 @@ frontend:
         agent: "testing"
         comment: "Admin stock management tested successfully. Admin login works (admin/admin123). Products page loads with product list table. 'Stok' button opens stock management dialog. Dialog shows stock summary with three cards: Toplam (total), Mevcut (available), Atanmış (assigned). Textarea accepts multiple stock codes (one per line). 'Toplu Ekle' button submits codes to backend. Info section explains auto-assignment on PAID status. All functionality working correctly."
 
+  - task: "Daily Countdown Timer on Banner"
+    implemented: true
+    working: "NA"
+    file: "app/page.js, app/admin/settings/site/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Daily countdown timer added to 'Bugüne Özel Fiyatlar' banner. Features: (1) Countdown calculates time to 23:59:59, (2) Updates every second with setInterval, (3) Auto-reset at midnight, (4) Tab visibility handling recalculates on tab focus, (5) Premium monospace font with neon glow, (6) Color changes: cyan (normal) → orange (<10min) → red (<5min), (7) Admin panel settings: dailyCountdownEnabled (on/off), dailyCountdownLabel text, (8) Backend API updated with new fields, (9) Responsive design for mobile. Needs UI testing."
+
 metadata:
   created_by: "testing_agent"
   version: "6.0"
