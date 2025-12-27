@@ -412,16 +412,44 @@ export default function SiteSettingsPage() {
                 <p className="text-slate-500 text-xs">Boş bırakılırsa otomatik olarak bugünün tarihi gösterilir</p>
               </div>
 
+              {/* Icon Selection */}
+              <div className="space-y-2">
+                <Label className="text-slate-300">Banner İkonu</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { id: 'fire', name: 'Ateş', icon: <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 23c-3.866 0-7-3.134-7-7 0-2.276 1.15-4.326 2.919-5.581C8.687 9.89 9.12 9.094 9.12 8.2c0-.894-.433-1.69-1.201-2.219C7.15 5.326 6 3.276 6 1c0-.55.45-1 1-1s1 .45 1 1c0 1.378.688 2.604 1.756 3.281C10.543 4.831 11 5.55 11 6.4c0 .85-.457 1.569-1.244 2.119C8.688 9.196 8 10.422 8 11.8c0 2.21 1.79 4 4 4s4-1.79 4-4c0-1.378-.688-2.604-1.756-3.281C13.457 7.969 13 7.25 13 6.4c0-.85.457-1.569 1.244-2.119C15.312 3.604 16 2.378 16 1c0-.55.45-1 1-1s1 .45 1 1c0 2.276-1.15 4.326-2.919 5.581-.768.55-1.201 1.346-1.201 2.219 0 .894.433 1.69 1.201 2.219C16.85 11.674 18 13.724 18 16c0 3.866-3.134 7-7 7h1z"/></svg>, color: 'orange' },
+                    { id: 'bolt', name: 'Yıldırım', icon: <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>, color: 'yellow' },
+                    { id: 'star', name: 'Yıldız', icon: <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>, color: 'yellow' },
+                    { id: 'gift', name: 'Hediye', icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>, color: 'pink' },
+                    { id: 'sparkles', name: 'Parıltı', icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>, color: 'purple' },
+                    { id: 'tag', name: 'Etiket', icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>, color: 'green' },
+                    { id: 'percent', name: 'İndirim', icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>, color: 'red' },
+                    { id: 'clock', name: 'Saat', icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>, color: 'blue' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSettings({ ...settings, dailyBannerIcon: item.id })}
+                      disabled={!settings.dailyBannerEnabled}
+                      className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-1 ${
+                        settings.dailyBannerIcon === item.id
+                          ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                          : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                      } ${!settings.dailyBannerEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {item.icon}
+                      <span className="text-xs">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Banner Preview */}
               {settings.dailyBannerEnabled && (
                 <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-[#1a1f35] via-[#252d4a] to-[#1a1f35] border border-white/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 23c-3.866 0-7-3.134-7-7 0-2.276 1.15-4.326 2.919-5.581C8.687 9.89 9.12 9.094 9.12 8.2c0-.894-.433-1.69-1.201-2.219C7.15 5.326 6 3.276 6 1c0-.55.45-1 1-1s1 .45 1 1c0 1.378.688 2.604 1.756 3.281C10.543 4.831 11 5.55 11 6.4c0 .85-.457 1.569-1.244 2.119C8.688 9.196 8 10.422 8 11.8c0 2.21 1.79 4 4 4s4-1.79 4-4c0-1.378-.688-2.604-1.756-3.281C13.457 7.969 13 7.25 13 6.4c0-.85.457-1.569 1.244-2.119C15.312 3.604 16 2.378 16 1c0-.55.45-1 1-1s1 .45 1 1c0 2.276-1.15 4.326-2.919 5.581-.768.55-1.201 1.346-1.201 2.219 0 .894.433 1.69 1.201 2.219C16.85 11.674 18 13.724 18 16c0 3.866-3.134 7-7 7h1z"/>
-                        </svg>
-                      </div>
+                      <BannerIconPreview icon={settings.dailyBannerIcon || 'fire'} />
                       <div>
                         <p className="text-white font-semibold">{settings.dailyBannerTitle || 'Bugüne Özel Fiyatlar'}</p>
                         <p className="text-white/60 text-sm">
