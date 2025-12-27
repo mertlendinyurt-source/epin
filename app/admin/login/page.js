@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, ShieldCheck } from 'lucide-react'
+import { Loader2, ShieldCheck, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,32 +12,65 @@ import { Toaster } from '@/components/ui/sonner'
 
 export default function AdminLogin() {
   const router = useRouter()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Check if already logged in as admin
+  useEffect(() => {
+    const token = localStorage.getItem('userToken')
+    const userData = localStorage.getItem('userData')
+    
+    if (token && userData) {
+      try {
+        const user = JSON.parse(userData)
+        if (user.role === 'admin') {
+          router.push('/admin/dashboard')
+        }
+      } catch (e) {}
+    }
+  }, [router])
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, password })
       })
 
       const data = await response.json()
 
       if (data.success) {
+        // Check if user is admin
+        if (data.data.user.role !== 'admin') {
+          toast.error('Bu hesap admin yetkisine sahip değil')
+          setLoading(false)
+          return
+        }
+
+        // Save token (use userToken for unified auth)
+        localStorage.setItem('userToken', data.data.token)
+        localStorage.setItem('userData', JSON.stringify(data.data.user))
+        // Also save as adminToken for backwards compatibility
         localStorage.setItem('adminToken', data.data.token)
-        localStorage.setItem('adminUsername', data.data.username)
+        localStorage.setItem('adminUsername', data.data.user.email)
+        
         toast.success('Giriş başarılı!')
         setTimeout(() => {
           router.push('/admin/dashboard')
         }, 500)
       } else {
-        toast.error(data.error || 'Giriş başarısız')
+        if (data.code === 'GOOGLE_ONLY') {
+          toast.error('Bu hesap Google ile oluşturulmuş. Google ile giriş yapın.')
+        } else if (data.code === 'ACCOUNT_SUSPENDED') {
+          toast.error(data.error)
+        } else {
+          toast.error(data.error || 'Giriş başarısız')
+        }
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -65,13 +98,13 @@ export default function AdminLogin() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label htmlFor="username" className="text-white">Kullanıcı Adı</Label>
+              <Label htmlFor="email" className="text-white">E-posta</Label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
                 required
                 className="bg-slate-800 border-slate-700 text-white mt-2"
               />
@@ -112,6 +145,7 @@ export default function AdminLogin() {
                 onClick={() => router.push('/')}
                 className="text-slate-400 hover:text-white"
               >
+                <ArrowLeft className="w-4 h-4 mr-1" />
                 Ana Sayfaya Dön
               </Button>
             </div>
@@ -119,8 +153,8 @@ export default function AdminLogin() {
 
           <div className="mt-6 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
             <p className="text-xs text-slate-400 text-center">
-              <span className="font-semibold">Test Hesabı:</span><br />
-              Kullanıcı: admin | Şifre: admin123
+              <span className="font-semibold">Admin Hesabı:</span><br />
+              E-posta: admin@pubguc.store | Şifre: admin123
             </p>
           </div>
         </CardContent>
