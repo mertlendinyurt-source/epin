@@ -2546,6 +2546,7 @@ export async function POST(request) {
         dailyBannerEnabled: dailyBannerEnabled !== undefined ? dailyBannerEnabled : existingSettings?.dailyBannerEnabled !== false,
         dailyBannerTitle: dailyBannerTitle !== undefined ? dailyBannerTitle.trim() : existingSettings?.dailyBannerTitle || 'Bugüne Özel Fiyatlar',
         dailyBannerSubtitle: dailyBannerSubtitle !== undefined ? dailyBannerSubtitle.trim() : existingSettings?.dailyBannerSubtitle || '',
+        dailyBannerIcon: dailyBannerIcon !== undefined ? dailyBannerIcon.trim() : existingSettings?.dailyBannerIcon || 'fire',
         active: true,
         updatedBy: user.username,
         updatedAt: new Date(),
