@@ -935,6 +935,8 @@ export async function GET(request) {
           dailyBannerTitle: 'Bugüne Özel Fiyatlar',
           dailyBannerSubtitle: '',
           dailyBannerIcon: 'fire',
+          dailyCountdownEnabled: true,
+          dailyCountdownLabel: 'Kampanya bitimine',
           active: true
         }
       });
@@ -959,7 +961,9 @@ export async function GET(request) {
           dailyBannerEnabled: settings?.dailyBannerEnabled !== false,
           dailyBannerTitle: settings?.dailyBannerTitle || 'Bugüne Özel Fiyatlar',
           dailyBannerSubtitle: settings?.dailyBannerSubtitle || '',
-          dailyBannerIcon: settings?.dailyBannerIcon || 'fire'
+          dailyBannerIcon: settings?.dailyBannerIcon || 'fire',
+          dailyCountdownEnabled: settings?.dailyCountdownEnabled !== false,
+          dailyCountdownLabel: settings?.dailyCountdownLabel || 'Kampanya bitimine'
         }
       });
     }
@@ -974,7 +978,9 @@ export async function GET(request) {
           enabled: settings?.dailyBannerEnabled !== false,
           title: settings?.dailyBannerTitle || 'Bugüne Özel Fiyatlar',
           subtitle: settings?.dailyBannerSubtitle || '',
-          icon: settings?.dailyBannerIcon || 'fire'
+          icon: settings?.dailyBannerIcon || 'fire',
+          countdownEnabled: settings?.dailyCountdownEnabled !== false,
+          countdownLabel: settings?.dailyCountdownLabel || 'Kampanya bitimine'
         }
       });
     }
