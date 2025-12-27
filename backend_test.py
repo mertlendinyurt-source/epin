@@ -1,761 +1,945 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Auth + Stock + Delivery System
-Tests all authentication, order creation, stock management, and auto-assignment features
+Support Ticket System API Backend Tests
+Tests all support ticket endpoints with comprehensive scenarios
 """
 
 import requests
 import json
 import time
-from typing import Dict, Any, Optional
+import sys
+from datetime import datetime
 
 # Configuration
-BASE_URL = "https://ticketing-portal-3.preview.emergentagent.com/api"
-HEADERS = {"Content-Type": "application/json"}
+BASE_URL = "https://ticketing-portal-3.preview.emergentagent.com"
+API_BASE = f"{BASE_URL}/api"
 
 # Test data
-TEST_USER = {
-    "firstName": "Test",
-    "lastName": "User",
-    "email": "testuser@example.com",
+TEST_USER_DATA = {
+    "firstName": "Ahmet",
+    "lastName": "Yılmaz", 
+    "email": "ahmet.test@example.com",
     "phone": "5551234567",
-    "password": "test123"
+    "password": "test123456"
 }
 
-# Global variables to store tokens and IDs
+ADMIN_CREDENTIALS = {
+    "username": "admin",
+    "password": "admin123"
+}
+
+# Global variables for tokens and IDs
 user_token = None
 admin_token = None
-test_product_id = None
-test_order_id = None
-test_stock_codes = ["CODE-001", "CODE-002"]
+test_ticket_id = None
 
-def print_test(test_name: str):
-    """Print test header"""
-    print(f"\n{'='*80}")
-    print(f"TEST: {test_name}")
-    print('='*80)
-
-def print_result(success: bool, message: str, details: Optional[Dict] = None):
-    """Print test result"""
+def print_test_result(test_name, success, details=""):
+    """Print formatted test result"""
     status = "✅ PASS" if success else "❌ FAIL"
-    print(f"{status}: {message}")
+    print(f"{status} {test_name}")
     if details:
-        print(f"Details: {json.dumps(details, indent=2)}")
+        print(f"   {details}")
+    print()
 
-def make_request(method: str, endpoint: str, data: Optional[Dict] = None, 
-                 token: Optional[str] = None) -> tuple[bool, Any, int]:
-    """Make HTTP request and return (success, response_data, status_code)"""
-    url = f"{BASE_URL}{endpoint}"
-    headers = HEADERS.copy()
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+def register_test_user():
+    """Register a test user and get JWT token"""
+    global user_token
+    
+    print("🔧 Setting up test user...")
     
     try:
-        if method == "GET":
-            response = requests.get(url, headers=headers, timeout=10)
-        elif method == "POST":
-            response = requests.post(url, json=data, headers=headers, timeout=10)
-        elif method == "PUT":
-            response = requests.put(url, json=data, headers=headers, timeout=10)
-        elif method == "DELETE":
-            response = requests.delete(url, headers=headers, timeout=10)
+        response = requests.post(f"{API_BASE}/auth/register", json=TEST_USER_DATA)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('token'):
+                user_token = data['token']
+                print(f"✅ Test user registered successfully")
+                return True
+            else:
+                print(f"❌ Registration failed: {data.get('error', 'Unknown error')}")
+                return False
+        elif response.status_code == 409:
+            # User already exists, try to login
+            print("ℹ️ User already exists, attempting login...")
+            login_response = requests.post(f"{API_BASE}/auth/login", json={
+                "email": TEST_USER_DATA["email"],
+                "password": TEST_USER_DATA["password"]
+            })
+            
+            if login_response.status_code == 200:
+                login_data = login_response.json()
+                if login_data.get('success') and login_data.get('token'):
+                    user_token = login_data['token']
+                    print(f"✅ Test user logged in successfully")
+                    return True
+            
+            print(f"❌ Login failed after registration conflict")
+            return False
         else:
-            return False, {"error": "Invalid method"}, 0
-        
-        try:
-            response_data = response.json()
-        except:
-            response_data = {"raw": response.text}
-        
-        return response.ok, response_data, response.status_code
+            print(f"❌ Registration failed with status {response.status_code}")
+            return False
+            
     except Exception as e:
-        return False, {"error": str(e)}, 0
-
-# ============================================================================
-# TEST 1: USER REGISTRATION
-# ============================================================================
-def test_user_registration():
-    """Test POST /api/auth/register with all validations"""
-    print_test("1. User Registration - Valid Data")
-    
-    success, data, status = make_request("POST", "/auth/register", TEST_USER)
-    
-    if success and status == 200 and data.get("success"):
-        global user_token
-        user_token = data.get("data", {}).get("token")
-        user_data = data.get("data", {}).get("user", {})
-        
-        # Validate response structure
-        if (user_token and user_data.get("email") == TEST_USER["email"].lower() 
-            and user_data.get("firstName") == TEST_USER["firstName"]):
-            print_result(True, "User registered successfully with JWT token", {
-                "email": user_data.get("email"),
-                "name": f"{user_data.get('firstName')} {user_data.get('lastName')}",
-                "token_length": len(user_token)
-            })
-            return True
-        else:
-            print_result(False, "Invalid response structure", data)
-            return False
-    else:
-        print_result(False, f"Registration failed (status {status})", data)
+        print(f"❌ Registration error: {str(e)}")
         return False
 
-def test_duplicate_email():
-    """Test duplicate email returns 409 with EMAIL_EXISTS code"""
-    print_test("2. User Registration - Duplicate Email")
+def login_admin():
+    """Login as admin and get JWT token"""
+    global admin_token
     
-    success, data, status = make_request("POST", "/auth/register", TEST_USER)
+    print("🔧 Logging in as admin...")
     
-    if status == 409 and data.get("code") == "EMAIL_EXISTS":
-        print_result(True, "Duplicate email correctly rejected with EMAIL_EXISTS code", {
-            "status": status,
-            "code": data.get("code"),
-            "error": data.get("error")
+    try:
+        response = requests.post(f"{API_BASE}/admin/login", json=ADMIN_CREDENTIALS)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('token'):
+                admin_token = data['token']
+                print(f"✅ Admin logged in successfully")
+                return True
+            else:
+                print(f"❌ Admin login failed: {data.get('error', 'Unknown error')}")
+                return False
+        else:
+            print(f"❌ Admin login failed with status {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Admin login error: {str(e)}")
+        return False
+
+def test_user_create_ticket():
+    """Test user ticket creation with validation and rate limiting"""
+    global test_ticket_id
+    
+    print("🧪 Testing User Ticket Creation...")
+    
+    # Test 1: Create ticket without auth (should fail)
+    try:
+        response = requests.post(f"{API_BASE}/support/tickets", json={
+            "subject": "Test ticket",
+            "category": "odeme",
+            "message": "This is a test ticket message"
         })
-        return True
-    else:
-        print_result(False, f"Expected 409 with EMAIL_EXISTS, got {status}", data)
-        return False
-
-def test_registration_validation():
-    """Test registration field validations"""
-    print_test("3. User Registration - Field Validations")
-    
-    test_cases = [
-        {
-            "name": "Missing fields",
-            "data": {"email": "test@test.com"},
-            "expected_status": 400
-        },
-        {
-            "name": "Invalid email format",
-            "data": {**TEST_USER, "email": "invalid-email"},
-            "expected_status": 400
-        },
-        {
-            "name": "Short password",
-            "data": {**TEST_USER, "email": "new@test.com", "password": "123"},
-            "expected_status": 400
-        },
-        {
-            "name": "Invalid phone",
-            "data": {**TEST_USER, "email": "new2@test.com", "phone": "123"},
-            "expected_status": 400
-        }
-    ]
-    
-    all_passed = True
-    for test_case in test_cases:
-        success, data, status = make_request("POST", "/auth/register", test_case["data"])
-        if status == test_case["expected_status"]:
-            print_result(True, f"Validation '{test_case['name']}' works correctly", {
-                "status": status,
-                "error": data.get("error")
-            })
-        else:
-            print_result(False, f"Validation '{test_case['name']}' failed", {
-                "expected": test_case["expected_status"],
-                "got": status
-            })
-            all_passed = False
-    
-    return all_passed
-
-# ============================================================================
-# TEST 2: USER LOGIN
-# ============================================================================
-def test_user_login():
-    """Test POST /api/auth/login"""
-    print_test("4. User Login - Valid Credentials")
-    
-    login_data = {
-        "email": TEST_USER["email"],
-        "password": TEST_USER["password"]
-    }
-    
-    success, data, status = make_request("POST", "/auth/login", login_data)
-    
-    if success and status == 200 and data.get("success"):
-        global user_token
-        user_token = data.get("data", {}).get("token")
-        user_data = data.get("data", {}).get("user", {})
         
-        if user_token and user_data.get("email") == TEST_USER["email"].lower():
-            print_result(True, "User logged in successfully", {
-                "email": user_data.get("email"),
-                "token_received": bool(user_token)
-            })
-            return True
-        else:
-            print_result(False, "Invalid login response", data)
-            return False
-    else:
-        print_result(False, f"Login failed (status {status})", data)
-        return False
-
-def test_login_invalid_credentials():
-    """Test login with wrong password"""
-    print_test("5. User Login - Invalid Credentials")
-    
-    login_data = {
-        "email": TEST_USER["email"],
-        "password": "wrongpassword"
-    }
-    
-    success, data, status = make_request("POST", "/auth/login", login_data)
-    
-    if status == 401:
-        print_result(True, "Invalid credentials correctly rejected", {
-            "status": status,
-            "error": data.get("error")
-        })
-        return True
-    else:
-        print_result(False, f"Expected 401, got {status}", data)
-        return False
-
-# ============================================================================
-# TEST 3: ADMIN LOGIN (for stock management tests)
-# ============================================================================
-def test_admin_login():
-    """Test admin login to get token for stock management"""
-    print_test("6. Admin Login")
-    
-    admin_data = {
-        "username": "admin",
-        "password": "admin123"
-    }
-    
-    success, data, status = make_request("POST", "/admin/login", admin_data)
-    
-    if success and status == 200 and data.get("success"):
-        global admin_token
-        admin_token = data.get("data", {}).get("token")
-        
-        if admin_token:
-            print_result(True, "Admin logged in successfully", {
-                "username": data.get("data", {}).get("username"),
-                "token_received": bool(admin_token)
-            })
-            return True
-        else:
-            print_result(False, "No token received", data)
-            return False
-    else:
-        print_result(False, f"Admin login failed (status {status})", data)
-        return False
-
-# ============================================================================
-# TEST 4: GET PRODUCTS (to get a product ID for testing)
-# ============================================================================
-def test_get_products():
-    """Get products to use in order tests"""
-    print_test("7. Get Products")
-    
-    success, data, status = make_request("GET", "/products")
-    
-    if success and status == 200 and data.get("success"):
-        products = data.get("data", [])
-        if products:
-            global test_product_id
-            test_product_id = products[0]["id"]
-            print_result(True, f"Retrieved {len(products)} products", {
-                "first_product": products[0]["title"],
-                "product_id": test_product_id
-            })
-            return True
-        else:
-            print_result(False, "No products found", data)
-            return False
-    else:
-        print_result(False, f"Failed to get products (status {status})", data)
-        return False
-
-# ============================================================================
-# TEST 5: ADMIN STOCK MANAGEMENT
-# ============================================================================
-def test_add_stock():
-    """Test POST /api/admin/products/:productId/stock"""
-    print_test("8. Admin - Add Stock Items")
-    
-    if not admin_token or not test_product_id:
-        print_result(False, "Missing admin token or product ID", {})
-        return False
-    
-    stock_data = {
-        "items": test_stock_codes
-    }
-    
-    success, data, status = make_request(
-        "POST", 
-        f"/admin/products/{test_product_id}/stock", 
-        stock_data, 
-        admin_token
-    )
-    
-    if success and status == 200 and data.get("success"):
-        print_result(True, f"Added {len(test_stock_codes)} stock items", {
-            "count": data.get("data", {}).get("count"),
-            "message": data.get("message")
-        })
-        return True
-    else:
-        print_result(False, f"Failed to add stock (status {status})", data)
-        return False
-
-def test_get_stock():
-    """Test GET /api/admin/products/:productId/stock"""
-    print_test("9. Admin - Get Stock Summary")
-    
-    if not admin_token or not test_product_id:
-        print_result(False, "Missing admin token or product ID", {})
-        return False
-    
-    success, data, status = make_request(
-        "GET", 
-        f"/admin/products/{test_product_id}/stock", 
-        None, 
-        admin_token
-    )
-    
-    if success and status == 200 and data.get("success"):
-        summary = data.get("data", {}).get("summary", {})
-        stocks = data.get("data", {}).get("stocks", [])
-        
-        # Verify stock items are saved with status 'available'
-        available_stocks = [s for s in stocks if s.get("status") == "available"]
-        
-        if len(available_stocks) >= len(test_stock_codes):
-            print_result(True, "Stock summary retrieved successfully", {
-                "total": summary.get("total"),
-                "available": summary.get("available"),
-                "assigned": summary.get("assigned"),
-                "available_stocks_verified": len(available_stocks)
-            })
-            return True
-        else:
-            print_result(False, "Stock items not saved correctly", {
-                "expected_available": len(test_stock_codes),
-                "got_available": len(available_stocks)
-            })
-            return False
-    else:
-        print_result(False, f"Failed to get stock (status {status})", data)
-        return False
-
-# ============================================================================
-# TEST 6: ORDER CREATION WITH AUTH
-# ============================================================================
-def test_create_order_without_auth():
-    """Test order creation fails without JWT token"""
-    print_test("10. Create Order - Without Auth (Should Fail)")
-    
-    order_data = {
-        "productId": test_product_id,
-        "playerId": "1234567890",
-        "playerName": "TestPlayer"
-    }
-    
-    success, data, status = make_request("POST", "/orders", order_data)
-    
-    if status == 401 and data.get("code") == "AUTH_REQUIRED":
-        print_result(True, "Order creation correctly requires authentication", {
-            "status": status,
-            "code": data.get("code"),
-            "error": data.get("error")
-        })
-        return True
-    else:
-        print_result(False, f"Expected 401 with AUTH_REQUIRED, got {status}", data)
-        return False
-
-def test_create_order_with_auth():
-    """Test order creation with JWT token"""
-    print_test("11. Create Order - With Auth")
-    
-    if not user_token or not test_product_id:
-        print_result(False, "Missing user token or product ID", {})
-        return False
-    
-    order_data = {
-        "productId": test_product_id,
-        "playerId": "1234567890",
-        "playerName": "TestPlayer#7890"
-    }
-    
-    success, data, status = make_request("POST", "/orders", order_data, user_token)
-    
-    if success and status == 200 and data.get("success"):
-        order = data.get("data", {}).get("order", {})
-        global test_order_id
-        test_order_id = order.get("id")
-        
-        # Verify order has userId and customer snapshot
-        if (order.get("userId") and order.get("customer") and 
-            order.get("customer", {}).get("email") == TEST_USER["email"].lower()):
-            print_result(True, "Order created with userId and customer snapshot", {
-                "orderId": test_order_id,
-                "userId": order.get("userId"),
-                "customer_email": order.get("customer", {}).get("email"),
-                "customer_name": f"{order.get('customer', {}).get('firstName')} {order.get('customer', {}).get('lastName')}",
-                "status": order.get("status")
-            })
-            return True
-        else:
-            print_result(False, "Order missing userId or customer data", order)
-            return False
-    else:
-        print_result(False, f"Failed to create order (status {status})", data)
-        return False
-
-# ============================================================================
-# TEST 7: USER ORDERS ENDPOINTS
-# ============================================================================
-def test_get_user_orders():
-    """Test GET /api/account/orders"""
-    print_test("12. Get User Orders")
-    
-    if not user_token:
-        print_result(False, "Missing user token", {})
-        return False
-    
-    success, data, status = make_request("GET", "/account/orders", None, user_token)
-    
-    if success and status == 200 and data.get("success"):
-        orders = data.get("data", [])
-        print_result(True, f"Retrieved {len(orders)} user orders", {
-            "order_count": len(orders),
-            "has_test_order": any(o.get("id") == test_order_id for o in orders)
-        })
-        return True
-    else:
-        print_result(False, f"Failed to get user orders (status {status})", data)
-        return False
-
-def test_get_user_orders_without_auth():
-    """Test GET /api/account/orders without auth"""
-    print_test("13. Get User Orders - Without Auth (Should Fail)")
-    
-    success, data, status = make_request("GET", "/account/orders")
-    
-    if status == 401:
-        print_result(True, "User orders endpoint requires authentication", {
-            "status": status,
-            "error": data.get("error")
-        })
-        return True
-    else:
-        print_result(False, f"Expected 401, got {status}", data)
-        return False
-
-def test_get_single_user_order():
-    """Test GET /api/account/orders/:orderId"""
-    print_test("14. Get Single User Order")
-    
-    if not user_token or not test_order_id:
-        print_result(False, "Missing user token or order ID", {})
-        return False
-    
-    success, data, status = make_request(
-        "GET", 
-        f"/account/orders/{test_order_id}", 
-        None, 
-        user_token
-    )
-    
-    if success and status == 200 and data.get("success"):
-        order = data.get("data", {}).get("order", {})
-        if order.get("id") == test_order_id:
-            print_result(True, "Retrieved single order successfully", {
-                "orderId": order.get("id"),
-                "status": order.get("status"),
-                "userId": order.get("userId")
-            })
-            return True
-        else:
-            print_result(False, "Order ID mismatch", data)
-            return False
-    else:
-        print_result(False, f"Failed to get order (status {status})", data)
-        return False
-
-# ============================================================================
-# TEST 8: AUTO-STOCK ASSIGNMENT
-# ============================================================================
-def test_auto_stock_assignment():
-    """Test auto-stock assignment when order is marked as PAID"""
-    print_test("15. Auto-Stock Assignment - PAID Callback")
-    
-    if not test_order_id:
-        print_result(False, "Missing order ID", {})
-        return False
-    
-    # Simulate PAID callback (without hash for testing)
-    callback_data = {
-        "orderId": test_order_id,
-        "status": "success",
-        "transactionId": f"TXN-{int(time.time())}",
-        "payment_id": f"PAY-{int(time.time())}",
-        "platform_order_id": test_order_id
-    }
-    
-    success, data, status = make_request("POST", "/payment/shopier/callback", callback_data)
-    
-    # Note: This might fail due to hash validation, but let's check
-    if success or status in [200, 403]:
-        print(f"Callback response (status {status}): {data}")
-        
-        # Wait a moment for processing
-        time.sleep(1)
-        
-        # Check order status and delivery
-        success2, order_data, status2 = make_request(
-            "GET", 
-            f"/account/orders/{test_order_id}", 
-            None, 
-            user_token
+        success = response.status_code == 401
+        print_test_result(
+            "Create ticket without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
         )
+    except Exception as e:
+        print_test_result("Create ticket without auth", False, f"Error: {str(e)}")
+    
+    # Test 2: Create ticket with missing fields
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets", 
+                               json={"subject": "Test"}, 
+                               headers=headers)
         
-        if success2 and status2 == 200:
-            order = order_data.get("data", {}).get("order", {})
-            delivery = order.get("delivery", {})
-            
-            print(f"Order after callback: status={order.get('status')}, delivery={delivery}")
-            
-            # Check if stock was assigned
-            if (order.get("status") == "paid" and 
-                delivery.get("status") == "delivered" and 
-                delivery.get("items") and len(delivery.get("items")) > 0):
+        success = response.status_code == 400
+        print_test_result(
+            "Create ticket with missing fields",
+            success,
+            f"Expected 400, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Create ticket with missing fields", False, f"Error: {str(e)}")
+    
+    # Test 3: Create ticket with short subject
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets", json={
+            "subject": "Hi",  # Too short
+            "category": "odeme",
+            "message": "This is a test ticket message"
+        }, headers=headers)
+        
+        success = response.status_code == 400
+        print_test_result(
+            "Create ticket with short subject",
+            success,
+            f"Expected 400, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Create ticket with short subject", False, f"Error: {str(e)}")
+    
+    # Test 4: Create ticket with short message
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets", json={
+            "subject": "Valid subject",
+            "category": "odeme",
+            "message": "Short"  # Too short
+        }, headers=headers)
+        
+        success = response.status_code == 400
+        print_test_result(
+            "Create ticket with short message",
+            success,
+            f"Expected 400, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Create ticket with short message", False, f"Error: {str(e)}")
+    
+    # Test 5: Create ticket with invalid category
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets", json={
+            "subject": "Valid subject",
+            "category": "invalid_category",
+            "message": "This is a valid message"
+        }, headers=headers)
+        
+        success = response.status_code == 400
+        print_test_result(
+            "Create ticket with invalid category",
+            success,
+            f"Expected 400, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Create ticket with invalid category", False, f"Error: {str(e)}")
+    
+    # Test 6: Create valid ticket
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets", json={
+            "subject": "Ödeme problemi yaşıyorum",
+            "category": "odeme",
+            "message": "Ödeme yaptım ancak UC'ler hesabıma geçmedi. Lütfen yardım edebilir misiniz?"
+        }, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('data'):
+                ticket = data['data']
+                test_ticket_id = ticket['id']
                 
-                # Verify stock status changed to 'assigned'
-                success3, stock_data, status3 = make_request(
-                    "GET", 
-                    f"/admin/products/{test_product_id}/stock", 
-                    None, 
-                    admin_token
+                # Verify ticket properties
+                success = (
+                    ticket['status'] == 'waiting_admin' and
+                    ticket['userCanReply'] == False and
+                    ticket['subject'] == "Ödeme problemi yaşıyorum" and
+                    ticket['category'] == "odeme"
                 )
                 
-                if success3:
-                    stocks = stock_data.get("data", {}).get("stocks", [])
-                    assigned_stocks = [s for s in stocks if s.get("status") == "assigned" and s.get("orderId") == test_order_id]
-                    
-                    if assigned_stocks:
-                        print_result(True, "Auto-stock assignment working correctly", {
-                            "order_status": order.get("status"),
-                            "delivery_status": delivery.get("status"),
-                            "assigned_item": delivery.get("items")[0],
-                            "stock_status": "assigned",
-                            "stock_orderId": assigned_stocks[0].get("orderId")
-                        })
-                        return True
-                    else:
-                        print_result(False, "Stock status not updated to 'assigned'", {
-                            "stocks": stocks
-                        })
-                        return False
-                else:
-                    print_result(False, "Could not verify stock status", {})
-                    return False
+                print_test_result(
+                    "Create valid ticket",
+                    success,
+                    f"Ticket created with ID: {test_ticket_id}, status: {ticket['status']}, userCanReply: {ticket['userCanReply']}"
+                )
             else:
-                print_result(False, "Stock not assigned or order not paid", {
-                    "order_status": order.get("status"),
-                    "delivery": delivery
-                })
-                return False
+                print_test_result("Create valid ticket", False, f"Invalid response data: {data}")
         else:
-            print_result(False, "Could not retrieve order after callback", {})
-            return False
-    else:
-        print_result(False, f"Callback failed (status {status})", data)
-        return False
-
-def test_idempotency():
-    """Test sending same PAID callback twice"""
-    print_test("16. Idempotency - Duplicate PAID Callback")
+            print_test_result("Create valid ticket", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Create valid ticket", False, f"Error: {str(e)}")
     
-    if not test_order_id:
-        print_result(False, "Missing order ID", {})
-        return False
+    # Test 7: Test rate limiting (create 3 more tickets quickly)
+    print("🧪 Testing rate limiting (3 tickets per 10 minutes)...")
     
-    # Send same callback again
-    callback_data = {
-        "orderId": test_order_id,
-        "status": "success",
-        "transactionId": f"TXN-DUPLICATE-{int(time.time())}",
-        "payment_id": f"PAY-DUPLICATE-{int(time.time())}",
-        "platform_order_id": test_order_id
-    }
-    
-    success, data, status = make_request("POST", "/payment/shopier/callback", callback_data)
-    
-    # Check if it returns success without assigning more stock
-    if success or status in [200, 403]:
-        # Get stock count
-        success2, stock_data, status2 = make_request(
-            "GET", 
-            f"/admin/products/{test_product_id}/stock", 
-            None, 
-            admin_token
-        )
-        
-        if success2:
-            stocks = stock_data.get("data", {}).get("stocks", [])
-            assigned_to_order = [s for s in stocks if s.get("orderId") == test_order_id]
+    rate_limit_hit = False
+    for i in range(3):
+        try:
+            headers = {"Authorization": f"Bearer {user_token}"}
+            response = requests.post(f"{API_BASE}/support/tickets", json={
+                "subject": f"Rate limit test ticket {i+1}",
+                "category": "diger",
+                "message": f"This is rate limit test message {i+1}"
+            }, headers=headers)
             
-            if len(assigned_to_order) == 1:
-                print_result(True, "Idempotency working - only 1 stock assigned", {
-                    "assigned_count": len(assigned_to_order),
-                    "message": data.get("message")
-                })
-                return True
-            else:
-                print_result(False, f"Multiple stocks assigned: {len(assigned_to_order)}", {
-                    "assigned_stocks": assigned_to_order
-                })
-                return False
-        else:
-            print_result(False, "Could not verify stock count", {})
-            return False
-    else:
-        print_result(False, f"Callback failed (status {status})", data)
-        return False
+            if response.status_code == 429:
+                rate_limit_hit = True
+                break
+            elif response.status_code != 200:
+                print(f"   Unexpected status for ticket {i+1}: {response.status_code}")
+                
+        except Exception as e:
+            print(f"   Error creating rate limit test ticket {i+1}: {str(e)}")
+    
+    print_test_result(
+        "Rate limiting (3 tickets per 10 minutes)",
+        rate_limit_hit,
+        "Rate limit triggered as expected" if rate_limit_hit else "Rate limit not triggered"
+    )
 
-# ============================================================================
-# TEST 9: OUT OF STOCK SCENARIO
-# ============================================================================
-def test_out_of_stock():
-    """Test order with no stock available"""
-    print_test("17. Out of Stock Scenario")
+def test_user_ticket_list():
+    """Test user ticket list endpoint"""
+    print("🧪 Testing User Ticket List...")
     
-    # First, find a product with no stock or create order for product with exhausted stock
-    # For this test, we'll create a new order and simulate callback when no stock is available
-    
-    # Create another order
-    order_data = {
-        "productId": test_product_id,
-        "playerId": "9876543210",
-        "playerName": "TestPlayer2#3210"
-    }
-    
-    success, data, status = make_request("POST", "/orders", order_data, user_token)
-    
-    if success and status == 200:
-        order2_id = data.get("data", {}).get("order", {}).get("id")
+    # Test 1: Get tickets without auth
+    try:
+        response = requests.get(f"{API_BASE}/support/tickets")
         
-        # Simulate PAID callback
-        callback_data = {
-            "orderId": order2_id,
-            "status": "success",
-            "transactionId": f"TXN-NOSTOCK-{int(time.time())}",
-            "payment_id": f"PAY-NOSTOCK-{int(time.time())}",
-            "platform_order_id": order2_id
-        }
-        
-        make_request("POST", "/payment/shopier/callback", callback_data)
-        time.sleep(1)
-        
-        # Check order delivery status
-        success2, order_data2, status2 = make_request(
-            "GET", 
-            f"/account/orders/{order2_id}", 
-            None, 
-            user_token
+        success = response.status_code == 401
+        print_test_result(
+            "Get tickets without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
         )
+    except Exception as e:
+        print_test_result("Get tickets without auth", False, f"Error: {str(e)}")
+    
+    # Test 2: Get user's tickets
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.get(f"{API_BASE}/support/tickets", headers=headers)
         
-        if success2:
-            order = order_data2.get("data", {}).get("order", {})
-            delivery = order.get("delivery", {})
-            
-            # If no stock available, delivery status should be 'pending'
-            if delivery.get("status") == "pending" and "bekleniyor" in delivery.get("message", "").lower():
-                print_result(True, "Out of stock scenario handled correctly", {
-                    "delivery_status": delivery.get("status"),
-                    "message": delivery.get("message")
-                })
-                return True
-            elif delivery.get("status") == "delivered":
-                print_result(True, "Stock was available and assigned (expected if stock exists)", {
-                    "delivery_status": delivery.get("status"),
-                    "items": delivery.get("items")
-                })
-                return True
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and 'data' in data:
+                tickets = data['data']
+                success = len(tickets) > 0  # Should have at least the ticket we created
+                
+                print_test_result(
+                    "Get user's tickets",
+                    success,
+                    f"Found {len(tickets)} tickets"
+                )
             else:
-                print_result(False, "Unexpected delivery status", delivery)
-                return False
+                print_test_result("Get user's tickets", False, f"Invalid response data: {data}")
         else:
-            print_result(False, "Could not retrieve order", {})
-            return False
-    else:
-        print_result(False, "Could not create second order", data)
-        return False
+            print_test_result("Get user's tickets", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Get user's tickets", False, f"Error: {str(e)}")
 
-# ============================================================================
-# MAIN TEST RUNNER
-# ============================================================================
-def run_all_tests():
-    """Run all tests and report results"""
-    print("\n" + "="*80)
-    print("BACKEND API TESTING - AUTH + STOCK + DELIVERY SYSTEM")
-    print("="*80)
+def test_user_single_ticket():
+    """Test user single ticket endpoint"""
+    print("🧪 Testing User Single Ticket...")
     
-    results = []
+    if not test_ticket_id:
+        print_test_result("Get single ticket", False, "No test ticket ID available")
+        return
     
-    # Auth Tests
-    results.append(("User Registration", test_user_registration()))
-    results.append(("Duplicate Email Check", test_duplicate_email()))
-    results.append(("Registration Validations", test_registration_validation()))
-    results.append(("User Login", test_user_login()))
-    results.append(("Invalid Login", test_login_invalid_credentials()))
+    # Test 1: Get ticket without auth
+    try:
+        response = requests.get(f"{API_BASE}/support/tickets/{test_ticket_id}")
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Get single ticket without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Get single ticket without auth", False, f"Error: {str(e)}")
     
-    # Admin Login
-    results.append(("Admin Login", test_admin_login()))
+    # Test 2: Get valid ticket with messages
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.get(f"{API_BASE}/support/tickets/{test_ticket_id}", headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('data'):
+                ticket_data = data['data']
+                ticket = ticket_data.get('ticket')
+                messages = ticket_data.get('messages', [])
+                
+                success = (
+                    ticket and 
+                    ticket['id'] == test_ticket_id and
+                    len(messages) >= 1  # Should have initial message
+                )
+                
+                print_test_result(
+                    "Get single ticket with messages",
+                    success,
+                    f"Ticket found with {len(messages)} messages"
+                )
+            else:
+                print_test_result("Get single ticket with messages", False, f"Invalid response data: {data}")
+        else:
+            print_test_result("Get single ticket with messages", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Get single ticket with messages", False, f"Error: {str(e)}")
     
-    # Get Products
-    results.append(("Get Products", test_get_products()))
+    # Test 3: Try to access non-existent ticket
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.get(f"{API_BASE}/support/tickets/non-existent-id", headers=headers)
+        
+        success = response.status_code == 404
+        print_test_result(
+            "Get non-existent ticket",
+            success,
+            f"Expected 404, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Get non-existent ticket", False, f"Error: {str(e)}")
+
+def test_user_send_message():
+    """Test user send message endpoint - CRITICAL userCanReply logic"""
+    print("🧪 Testing User Send Message (CRITICAL userCanReply logic)...")
     
-    # Stock Management
-    results.append(("Add Stock", test_add_stock()))
-    results.append(("Get Stock Summary", test_get_stock()))
+    if not test_ticket_id:
+        print_test_result("User send message", False, "No test ticket ID available")
+        return
     
-    # Order Creation
-    results.append(("Create Order Without Auth", test_create_order_without_auth()))
-    results.append(("Create Order With Auth", test_create_order_with_auth()))
+    # Test 1: Try to send message when userCanReply=false (should fail with 403)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "Bu mesaj gönderilmemeli çünkü admin henüz yanıtlamadı"}, 
+                               headers=headers)
+        
+        success = response.status_code == 403
+        if success and response.status_code == 403:
+            data = response.json()
+            expected_message = "Admin yanıtı bekleniyor. Şu anda mesaj gönderemezsiniz."
+            success = expected_message in data.get('error', '')
+        
+        print_test_result(
+            "Send message when userCanReply=false",
+            success,
+            f"Expected 403 with specific message, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Send message when userCanReply=false", False, f"Error: {str(e)}")
     
-    # User Orders
-    results.append(("Get User Orders", test_get_user_orders()))
-    results.append(("Get User Orders Without Auth", test_get_user_orders_without_auth()))
-    results.append(("Get Single User Order", test_get_single_user_order()))
+    # Test 2: Send message without auth
+    try:
+        response = requests.post(f"{API_BASE}/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "Test message"})
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Send message without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Send message without auth", False, f"Error: {str(e)}")
     
-    # Auto-Stock Assignment
-    results.append(("Auto-Stock Assignment", test_auto_stock_assignment()))
-    results.append(("Idempotency Test", test_idempotency()))
-    results.append(("Out of Stock Scenario", test_out_of_stock()))
+    # Test 3: Send message with short content
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "X"}, 
+                               headers=headers)
+        
+        success = response.status_code == 400
+        print_test_result(
+            "Send message with short content",
+            success,
+            f"Expected 400, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Send message with short content", False, f"Error: {str(e)}")
+
+def test_admin_ticket_list():
+    """Test admin ticket list endpoint"""
+    print("🧪 Testing Admin Ticket List...")
     
-    # Summary
-    print("\n" + "="*80)
-    print("TEST SUMMARY")
-    print("="*80)
+    # Test 1: Get tickets without admin auth
+    try:
+        response = requests.get(f"{API_BASE}/admin/support/tickets")
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Get admin tickets without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Get admin tickets without auth", False, f"Error: {str(e)}")
     
-    passed = sum(1 for _, result in results if result)
-    total = len(results)
+    # Test 2: Get tickets with user token (should fail)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.get(f"{API_BASE}/admin/support/tickets", headers=headers)
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Get admin tickets with user token",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Get admin tickets with user token", False, f"Error: {str(e)}")
     
-    for test_name, result in results:
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{status}: {test_name}")
+    # Test 3: Get all tickets with admin token
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.get(f"{API_BASE}/admin/support/tickets", headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and 'data' in data:
+                tickets = data['data']
+                success = len(tickets) > 0
+                
+                # Check if tickets have user info
+                if tickets:
+                    first_ticket = tickets[0]
+                    has_user_info = 'userEmail' in first_ticket and 'userName' in first_ticket
+                    success = success and has_user_info
+                
+                print_test_result(
+                    "Get all tickets with admin token",
+                    success,
+                    f"Found {len(tickets)} tickets with user info"
+                )
+            else:
+                print_test_result("Get all tickets with admin token", False, f"Invalid response data: {data}")
+        else:
+            print_test_result("Get all tickets with admin token", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Get all tickets with admin token", False, f"Error: {str(e)}")
     
-    print("\n" + "="*80)
-    print(f"TOTAL: {passed}/{total} tests passed ({passed*100//total}%)")
-    print("="*80)
+    # Test 4: Get tickets with status filter
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.get(f"{API_BASE}/admin/support/tickets?status=waiting_admin", headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and 'data' in data:
+                tickets = data['data']
+                # All tickets should have status 'waiting_admin'
+                success = all(ticket['status'] == 'waiting_admin' for ticket in tickets)
+                
+                print_test_result(
+                    "Get tickets with status filter",
+                    success,
+                    f"Found {len(tickets)} tickets with status 'waiting_admin'"
+                )
+            else:
+                print_test_result("Get tickets with status filter", False, f"Invalid response data: {data}")
+        else:
+            print_test_result("Get tickets with status filter", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Get tickets with status filter", False, f"Error: {str(e)}")
+
+def test_admin_single_ticket():
+    """Test admin single ticket endpoint"""
+    print("🧪 Testing Admin Single Ticket...")
     
-    return passed == total
+    if not test_ticket_id:
+        print_test_result("Admin get single ticket", False, "No test ticket ID available")
+        return
+    
+    # Test 1: Get ticket without admin auth
+    try:
+        response = requests.get(f"{API_BASE}/admin/support/tickets/{test_ticket_id}")
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Get admin single ticket without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Get admin single ticket without auth", False, f"Error: {str(e)}")
+    
+    # Test 2: Get ticket with admin token
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.get(f"{API_BASE}/admin/support/tickets/{test_ticket_id}", headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('data'):
+                ticket_data = data['data']
+                ticket = ticket_data.get('ticket')
+                messages = ticket_data.get('messages', [])
+                
+                success = (
+                    ticket and 
+                    ticket['id'] == test_ticket_id and
+                    'userEmail' in ticket and
+                    'userName' in ticket and
+                    len(messages) >= 1
+                )
+                
+                print_test_result(
+                    "Get single ticket with admin token",
+                    success,
+                    f"Ticket found with user info and {len(messages)} messages"
+                )
+            else:
+                print_test_result("Get single ticket with admin token", False, f"Invalid response data: {data}")
+        else:
+            print_test_result("Get single ticket with admin token", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Get single ticket with admin token", False, f"Error: {str(e)}")
+
+def test_admin_reply():
+    """Test admin reply endpoint - CRITICAL userCanReply logic"""
+    print("🧪 Testing Admin Reply (CRITICAL userCanReply logic)...")
+    
+    if not test_ticket_id:
+        print_test_result("Admin reply", False, "No test ticket ID available")
+        return
+    
+    # Test 1: Reply without admin auth
+    try:
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "Admin yanıtı"})
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Admin reply without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Admin reply without auth", False, f"Error: {str(e)}")
+    
+    # Test 2: Reply with short message
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "X"}, 
+                               headers=headers)
+        
+        success = response.status_code == 400
+        print_test_result(
+            "Admin reply with short message",
+            success,
+            f"Expected 400, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Admin reply with short message", False, f"Error: {str(e)}")
+    
+    # Test 3: Valid admin reply (CRITICAL - should enable userCanReply)
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "Merhaba, ödeme probleminizi inceliyoruz. Lütfen işlem numaranızı paylaşır mısınız?"}, 
+                               headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            success = data.get('success', False)
+            
+            # Verify ticket status changed to waiting_user and userCanReply=true
+            if success:
+                # Get ticket to verify status
+                ticket_response = requests.get(f"{API_BASE}/admin/support/tickets/{test_ticket_id}", headers=headers)
+                if ticket_response.status_code == 200:
+                    ticket_data = ticket_response.json()
+                    if ticket_data.get('success') and ticket_data.get('data'):
+                        ticket = ticket_data['data']['ticket']
+                        success = (
+                            ticket['status'] == 'waiting_user' and
+                            ticket['userCanReply'] == True
+                        )
+            
+            print_test_result(
+                "Admin reply enables userCanReply",
+                success,
+                f"Status: waiting_user, userCanReply: true" if success else "Failed to update ticket status"
+            )
+        else:
+            print_test_result("Admin reply enables userCanReply", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Admin reply enables userCanReply", False, f"Error: {str(e)}")
+
+def test_user_send_message_after_admin_reply():
+    """Test user can send message after admin reply"""
+    print("🧪 Testing User Send Message After Admin Reply...")
+    
+    if not test_ticket_id:
+        print_test_result("User send message after admin reply", False, "No test ticket ID available")
+        return
+    
+    # Test 1: User should now be able to send message (userCanReply=true)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "İşlem numarası: TXN123456789. Lütfen kontrol edebilir misiniz?"}, 
+                               headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            success = data.get('success', False)
+            
+            # Verify ticket status changed back to waiting_admin and userCanReply=false
+            if success:
+                ticket_response = requests.get(f"{API_BASE}/support/tickets/{test_ticket_id}", headers=headers)
+                if ticket_response.status_code == 200:
+                    ticket_data = ticket_response.json()
+                    if ticket_data.get('success') and ticket_data.get('data'):
+                        ticket = ticket_data['data']['ticket']
+                        success = (
+                            ticket['status'] == 'waiting_admin' and
+                            ticket['userCanReply'] == False
+                        )
+            
+            print_test_result(
+                "User sends message after admin reply",
+                success,
+                f"Message sent, status: waiting_admin, userCanReply: false" if success else "Failed to update ticket status"
+            )
+        else:
+            print_test_result("User sends message after admin reply", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("User sends message after admin reply", False, f"Error: {str(e)}")
+    
+    # Test 2: User should NOT be able to send another message (userCanReply=false again)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "Bu mesaj gönderilmemeli"}, 
+                               headers=headers)
+        
+        success = response.status_code == 403
+        if success and response.status_code == 403:
+            data = response.json()
+            expected_message = "Admin yanıtı bekleniyor. Şu anda mesaj gönderemezsiniz."
+            success = expected_message in data.get('error', '')
+        
+        print_test_result(
+            "User cannot send second message",
+            success,
+            f"Expected 403 with specific message, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("User cannot send second message", False, f"Error: {str(e)}")
+
+def test_admin_close_ticket():
+    """Test admin close ticket endpoint"""
+    print("🧪 Testing Admin Close Ticket...")
+    
+    if not test_ticket_id:
+        print_test_result("Admin close ticket", False, "No test ticket ID available")
+        return
+    
+    # Test 1: Close ticket without admin auth
+    try:
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{test_ticket_id}/close")
+        
+        success = response.status_code == 401
+        print_test_result(
+            "Close ticket without auth",
+            success,
+            f"Expected 401, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("Close ticket without auth", False, f"Error: {str(e)}")
+    
+    # Test 2: Close ticket with admin token
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{test_ticket_id}/close", headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            success = data.get('success', False)
+            
+            # Verify ticket status changed to closed and userCanReply=false
+            if success:
+                ticket_response = requests.get(f"{API_BASE}/admin/support/tickets/{test_ticket_id}", headers=headers)
+                if ticket_response.status_code == 200:
+                    ticket_data = ticket_response.json()
+                    if ticket_data.get('success') and ticket_data.get('data'):
+                        ticket = ticket_data['data']['ticket']
+                        success = (
+                            ticket['status'] == 'closed' and
+                            ticket['userCanReply'] == False
+                        )
+            
+            print_test_result(
+                "Admin closes ticket",
+                success,
+                f"Ticket closed, status: closed, userCanReply: false" if success else "Failed to update ticket status"
+            )
+        else:
+            print_test_result("Admin closes ticket", False, f"Expected 200, got {response.status_code}")
+    except Exception as e:
+        print_test_result("Admin closes ticket", False, f"Error: {str(e)}")
+    
+    # Test 3: User should NOT be able to send message to closed ticket
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{test_ticket_id}/messages", 
+                               json={"message": "Bu mesaj kapalı bilete gönderilmemeli"}, 
+                               headers=headers)
+        
+        success = response.status_code == 403
+        if success and response.status_code == 403:
+            data = response.json()
+            expected_message = "Bu talep kapatılmış. Yeni mesaj gönderemezsiniz."
+            success = expected_message in data.get('error', '')
+        
+        print_test_result(
+            "User cannot send message to closed ticket",
+            success,
+            f"Expected 403 with specific message, got {response.status_code}"
+        )
+    except Exception as e:
+        print_test_result("User cannot send message to closed ticket", False, f"Error: {str(e)}")
+
+def test_full_flow():
+    """Test complete support ticket flow"""
+    print("🧪 Testing Complete Support Ticket Flow...")
+    
+    # Create a new ticket for full flow test
+    flow_ticket_id = None
+    
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets", json={
+            "subject": "Teslimat sorunu - Full Flow Test",
+            "category": "teslimat",
+            "message": "UC kodlarım gelmedi, lütfen yardım edin."
+        }, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('data'):
+                flow_ticket_id = data['data']['id']
+                print(f"✅ Step 1: Ticket created (ID: {flow_ticket_id})")
+                print(f"   Status: waiting_admin, userCanReply: false")
+            else:
+                print("❌ Step 1: Failed to create ticket")
+                return
+        else:
+            print(f"❌ Step 1: Failed to create ticket (status: {response.status_code})")
+            return
+    except Exception as e:
+        print(f"❌ Step 1: Error creating ticket: {str(e)}")
+        return
+    
+    # Step 2: User tries to send message (should fail)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{flow_ticket_id}/messages", 
+                               json={"message": "Acil yardım gerekiyor!"}, 
+                               headers=headers)
+        
+        if response.status_code == 403:
+            print("✅ Step 2: User cannot send message (userCanReply=false)")
+        else:
+            print(f"❌ Step 2: Expected 403, got {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Step 2: Error: {str(e)}")
+        return
+    
+    # Step 3: Admin replies
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{flow_ticket_id}/messages", 
+                               json={"message": "Merhaba, sorununuzu inceliyoruz. Sipariş numaranızı paylaşabilir misiniz?"}, 
+                               headers=headers)
+        
+        if response.status_code == 200:
+            print("✅ Step 3: Admin replied")
+            print("   Status: waiting_user, userCanReply: true")
+        else:
+            print(f"❌ Step 3: Expected 200, got {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Step 3: Error: {str(e)}")
+        return
+    
+    # Step 4: User sends message
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{flow_ticket_id}/messages", 
+                               json={"message": "Sipariş numarası: ORD789123. Teşekkürler."}, 
+                               headers=headers)
+        
+        if response.status_code == 200:
+            print("✅ Step 4: User sent message")
+            print("   Status: waiting_admin, userCanReply: false")
+        else:
+            print(f"❌ Step 4: Expected 200, got {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Step 4: Error: {str(e)}")
+        return
+    
+    # Step 5: User tries to send another message (should fail)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{flow_ticket_id}/messages", 
+                               json={"message": "Başka bir mesaj"}, 
+                               headers=headers)
+        
+        if response.status_code == 403:
+            print("✅ Step 5: User cannot send another message (userCanReply=false)")
+        else:
+            print(f"❌ Step 5: Expected 403, got {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Step 5: Error: {str(e)}")
+        return
+    
+    # Step 6: Admin closes ticket
+    try:
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        response = requests.post(f"{API_BASE}/admin/support/tickets/{flow_ticket_id}/close", headers=headers)
+        
+        if response.status_code == 200:
+            print("✅ Step 6: Admin closed ticket")
+            print("   Status: closed, userCanReply: false")
+        else:
+            print(f"❌ Step 6: Expected 200, got {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Step 6: Error: {str(e)}")
+        return
+    
+    # Step 7: User tries to send message to closed ticket (should fail)
+    try:
+        headers = {"Authorization": f"Bearer {user_token}"}
+        response = requests.post(f"{API_BASE}/support/tickets/{flow_ticket_id}/messages", 
+                               json={"message": "Kapalı bilete mesaj"}, 
+                               headers=headers)
+        
+        if response.status_code == 403:
+            print("✅ Step 7: User cannot send message to closed ticket")
+            print("✅ FULL FLOW TEST COMPLETED SUCCESSFULLY!")
+        else:
+            print(f"❌ Step 7: Expected 403, got {response.status_code}")
+            return
+    except Exception as e:
+        print(f"❌ Step 7: Error: {str(e)}")
+        return
+
+def main():
+    """Run all support ticket system tests"""
+    print("🚀 Starting Support Ticket System API Tests")
+    print("=" * 60)
+    
+    # Setup
+    if not register_test_user():
+        print("❌ Failed to setup test user. Aborting tests.")
+        sys.exit(1)
+    
+    if not login_admin():
+        print("❌ Failed to login as admin. Aborting tests.")
+        sys.exit(1)
+    
+    print("✅ Setup completed successfully!")
+    print("=" * 60)
+    
+    # Run all tests
+    test_user_create_ticket()
+    test_user_ticket_list()
+    test_user_single_ticket()
+    test_user_send_message()
+    test_admin_ticket_list()
+    test_admin_single_ticket()
+    test_admin_reply()
+    test_user_send_message_after_admin_reply()
+    test_admin_close_ticket()
+    test_full_flow()
+    
+    print("=" * 60)
+    print("🏁 Support Ticket System API Tests Completed")
+    print(f"📊 Test Results Summary:")
+    print(f"   Base URL: {BASE_URL}")
+    print(f"   Test User: {TEST_USER_DATA['email']}")
+    print(f"   Admin: {ADMIN_CREDENTIALS['username']}")
+    if test_ticket_id:
+        print(f"   Test Ticket ID: {test_ticket_id}")
 
 if __name__ == "__main__":
-    try:
-        all_passed = run_all_tests()
-        exit(0 if all_passed else 1)
-    except Exception as e:
-        print(f"\n❌ FATAL ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        exit(1)
+    main()
