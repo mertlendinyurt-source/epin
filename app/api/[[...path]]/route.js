@@ -2314,9 +2314,28 @@ export async function POST(request) {
         );
       }
 
+      // Check brute force lockout
+      const bruteForceCheck = checkBruteForce(email.toLowerCase(), clientIP, false);
+      if (!bruteForceCheck.allowed) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Çok fazla başarısız deneme. ${Math.ceil(bruteForceCheck.retryAfter / 60)} dakika sonra tekrar deneyin.`,
+            code: 'LOCKOUT'
+          },
+          { 
+            status: 429,
+            headers: { 'Retry-After': bruteForceCheck.retryAfter?.toString() || '600' }
+          }
+        );
+      }
+
       // Find user by email
       const user = await db.collection('users').findOne({ email: email.toLowerCase() });
       if (!user) {
+        // Record failed attempt
+        recordFailedLogin(email.toLowerCase(), clientIP, false);
+        await logAuditAction(db, AUDIT_ACTIONS.USER_LOGIN_FAILED, null, 'user', null, request, { email, reason: 'user_not_found' });
         return NextResponse.json(
           { success: false, error: 'E-posta veya şifre hatalı' },
           { status: 401 }
@@ -2334,8 +2353,25 @@ export async function POST(request) {
       // Verify password
       const validPassword = await bcrypt.compare(password, user.passwordHash);
       if (!validPassword) {
+        // Record failed attempt - use admin config if user is admin
+        const isAdmin = user.role === 'admin';
+        const entry = recordFailedLogin(email.toLowerCase(), clientIP, isAdmin);
+        await logAuditAction(db, isAdmin ? AUDIT_ACTIONS.ADMIN_LOGIN_FAILED : AUDIT_ACTIONS.USER_LOGIN_FAILED, user.id, 'user', user.id, request, { 
+          email, 
+          reason: 'invalid_password',
+          attemptCount: entry.attempts
+        });
+        
+        // Show remaining attempts if close to lockout
+        const config = isAdmin ? BRUTE_FORCE_CONFIG.admin : BRUTE_FORCE_CONFIG.user;
+        const remaining = config.maxAttempts - entry.attempts;
+        let errorMsg = 'E-posta veya şifre hatalı';
+        if (remaining <= 2 && remaining > 0) {
+          errorMsg += `. ${remaining} deneme hakkınız kaldı.`;
+        }
+        
         return NextResponse.json(
-          { success: false, error: 'E-posta veya şifre hatalı' },
+          { success: false, error: errorMsg },
           { status: 401 }
         );
       }
@@ -2348,8 +2384,14 @@ export async function POST(request) {
         );
       }
 
+      // Clear brute force on successful login
+      clearBruteForce(email.toLowerCase(), clientIP, user.role === 'admin');
+
       // Determine user role (default: user)
       const userRole = user.role || 'user';
+
+      // Log successful login
+      await logAuditAction(db, userRole === 'admin' ? AUDIT_ACTIONS.ADMIN_LOGIN : AUDIT_ACTIONS.USER_LOGIN, user.id, 'user', user.id, request, { email });
 
       // Generate JWT token with role included
       const token = jwt.sign(
