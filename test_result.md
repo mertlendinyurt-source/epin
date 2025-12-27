@@ -718,11 +718,18 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Frontend UI testing completed - All features verified"
+    - "User Support Tickets - Create Ticket"
+    - "User Support Tickets - List Tickets"
+    - "User Support Tickets - Get Single Ticket"
+    - "User Support Tickets - Send Message"
+    - "Admin Support Tickets - List All Tickets"
+    - "Admin Support Tickets - Get Single Ticket"
+    - "Admin Support Tickets - Reply"
+    - "Admin Support Tickets - Close Ticket"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
-  completed: true
+  completed: false
 
 agent_communication:
   - agent: "main"
