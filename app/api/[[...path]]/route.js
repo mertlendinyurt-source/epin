@@ -3618,18 +3618,57 @@ export async function DELETE(request) {
 
     const db = await getDb();
 
-    // Delete product (soft delete - set active to false)
+    // Delete product (HARD DELETE - permanently remove from database)
     if (pathname.match(/^\/api\/admin\/products\/[^\/]+$/)) {
       const productId = pathname.split('/').pop();
       
-      await db.collection('products').updateOne(
-        { id: productId },
-        { $set: { active: false, updatedAt: new Date() } }
-      );
+      // Get product info before deletion (for image cleanup)
+      const product = await db.collection('products').findOne({ id: productId });
+      
+      if (!product) {
+        return NextResponse.json(
+          { success: false, error: 'Ürün bulunamadı' },
+          { status: 404 }
+        );
+      }
+      
+      // Delete product from database
+      const deleteResult = await db.collection('products').deleteOne({ id: productId });
+      
+      if (deleteResult.deletedCount === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Ürün silinemedi' },
+          { status: 500 }
+        );
+      }
+      
+      // Delete all stock items associated with this product
+      const stockDeleteResult = await db.collection('stocks').deleteMany({ productId: productId });
+      
+      // Log the deletion
+      console.log(`Product ${productId} deleted permanently. Stock items deleted: ${stockDeleteResult.deletedCount}`);
+      
+      // Optionally delete uploaded image if it's a local file
+      if (product.imageUrl && product.imageUrl.startsWith('/uploads/')) {
+        try {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          const imagePath = path.join(process.cwd(), 'public', product.imageUrl);
+          await fs.unlink(imagePath);
+          console.log(`Product image deleted: ${imagePath}`);
+        } catch (err) {
+          // Image might not exist or already deleted, continue
+          console.log(`Could not delete image: ${err.message}`);
+        }
+      }
       
       return NextResponse.json({
         success: true,
-        message: 'Ürün silindi'
+        message: 'Ürün ve stokları tamamen silindi',
+        data: {
+          productDeleted: true,
+          stocksDeleted: stockDeleteResult.deletedCount
+        }
       });
     }
 
