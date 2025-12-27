@@ -47,6 +47,13 @@ export default function App() {
     fetchGameContent()
     fetchReviews(1)
     fetchFooterSettings()
+    
+    // Set today's date only on client-side to avoid hydration mismatch
+    setTodayDate(new Date().toLocaleDateString('tr-TR', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    }))
   }, [])
 
   const fetchFooterSettings = async () => {
