@@ -1828,10 +1828,27 @@ PUBG Mobile, dünyanın en popüler battle royale oyunlarından biridir. Unknown
 
 export async function POST(request) {
   const { pathname } = new URL(request.url);
+  const clientIP = getClientIP(request);
   
   try {
     await initializeDb();
     const db = await getDb();
+    
+    // Rate limiting for POST endpoints
+    const user = verifyToken(request);
+    const rateLimit = checkRateLimit(pathname, request, user);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests', message: 'Çok fazla istek gönderildi. Lütfen bekleyin.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimit.retryAfter?.toString() || '60',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
     
     // Admin: Upload file (MUST BE BEFORE body = await request.json())
     if (pathname === '/api/admin/upload') {
