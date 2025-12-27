@@ -120,7 +120,24 @@ export default function SiteSettingsPage() {
         body: formData
       });
 
-      const uploadResult = await uploadResponse.json();
+      // Debug: Log raw response
+      console.log('Upload response status:', uploadResponse.status);
+      console.log('Upload response headers:', uploadResponse.headers.get('content-type'));
+      
+      // Handle non-JSON responses
+      const contentType = uploadResponse.headers.get('content-type');
+      let uploadResult;
+      
+      if (contentType && contentType.includes('application/json')) {
+        uploadResult = await uploadResponse.json();
+      } else {
+        const textResponse = await uploadResponse.text();
+        console.error('Non-JSON response:', textResponse);
+        toast.error('Sunucu beklenmeyen yanıt döndü');
+        return;
+      }
+
+      console.log('Upload result:', uploadResult);
 
       if (!uploadResult.success) {
         toast.error(uploadResult.error || 'Upload başarısız');
@@ -143,6 +160,7 @@ export default function SiteSettingsPage() {
       });
 
       const settingsResult = await settingsResponse.json();
+      console.log('Settings result:', settingsResult);
 
       if (settingsResult.success) {
         setSettings(newSettings);
@@ -158,7 +176,7 @@ export default function SiteSettingsPage() {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Yükleme hatası');
+      toast.error(`Yükleme hatası: ${error.message}`);
     } finally {
       setSaving(false);
     }
