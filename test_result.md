@@ -657,6 +657,114 @@ backend:
         agent: "testing"
         comment: "POST /api/admin/support/tickets/:ticketId/close working correctly. Requires admin JWT authentication (401 without admin token). Sets status=closed, userCanReply=false, closedBy=admin.username, closedAt=timestamp. Users cannot send messages to closed tickets (403). Minor: Error message shows 'Admin yanıtı bekleniyor' instead of 'Bu talep kapatılmış' due to userCanReply check order, but functionality correct."
 
+  - task: "Email Settings Management - GET"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/admin/email/settings working correctly. Requires admin JWT authentication (401 without token). Returns email settings with smtpPass properly masked (••••••••) for security. Returns default settings if none configured. Authentication and masking working as expected."
+
+  - task: "Email Settings Management - POST"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/admin/email/settings working correctly. Requires admin JWT authentication (401 without token). Saves email settings with AES encryption for smtpPass. Preserves existing encrypted password when masked value (••••••••) is sent. Settings saved successfully with proper encryption and upsert functionality."
+
+  - task: "Email Logs Management"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/admin/email/logs working correctly. Requires admin JWT authentication (401 without token). Returns email logs array sorted by createdAt descending, limited to 100 entries. Logs include type, userId, status, error details, and timestamps. Tested successfully with multiple log entries."
+
+  - task: "Test Email Functionality"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/admin/email/test working correctly. Requires admin JWT authentication (401 without token). Tests SMTP configuration and sends test email. Returns appropriate errors for invalid SMTP credentials (expected behavior). Creates email log entries for both successful and failed attempts. API logic and error handling working correctly."
+
+  - task: "Welcome Email Trigger"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Welcome email trigger implemented in user registration endpoint. Calls sendWelcomeEmail() asynchronously after user creation. Email sending may be disabled if SMTP not configured, but trigger logic is working correctly. No critical issues found."
+
+  - task: "Password Change Email Trigger"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Password change email trigger working correctly. PUT /api/account/password endpoint calls sendPasswordChangedEmail() asynchronously after successful password change. Email log entries created with type 'password_changed'. Trigger functionality verified through email logs. Password change endpoint working with proper validation (currentPassword, newPassword, confirmPassword required)."
+
+  - task: "Email Template System"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Email template system implemented with generateEmailTemplate() function. Creates premium HTML emails with responsive design, logo support, CTA buttons, delivery codes display, and proper styling. Templates support welcome, order confirmation, delivery, password change, and support reply emails. Template generation working correctly."
+
+  - task: "Email Duplicate Prevention"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Email duplicate prevention system working correctly. checkEmailSent() function prevents duplicate emails based on type, userId, orderId, and ticketId. Some email types (password_changed, support_reply) skip duplicate check as intended. Duplicate prevention logic verified through testing."
+
+  - task: "Email Encryption & Security"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js, lib/crypto.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Email security features working correctly. SMTP passwords encrypted using AES-256-GCM encryption before database storage. Passwords properly masked (••••••••) when returned to frontend. Decryption working correctly for email sending. No plaintext passwords stored or exposed. Security implementation verified."
+
 frontend:
   - task: "Auth Modal (Register + Login)"
     implemented: true
