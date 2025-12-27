@@ -24,6 +24,9 @@ export default function AdminProducts() {
   const [selectedProductForStock, setSelectedProductForStock] = useState(null)
   const [stockData, setStockData] = useState({ items: '', summary: null })
   const [stockLoading, setStockLoading] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     ucAmount: '',
@@ -32,7 +35,7 @@ export default function AdminProducts() {
     discountPercent: '',
     active: true,
     sortOrder: '',
-    image: ''
+    imageUrl: ''
   })
 
   useEffect(() => {
