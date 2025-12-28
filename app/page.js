@@ -419,7 +419,33 @@ export default function App() {
       }
       
       if (data.success) {
-        window.location.href = data.data.paymentUrl
+        // Shopier requires form POST submission
+        if (data.data.paymentData && data.data.signature) {
+          // Create a hidden form and submit it
+          const form = document.createElement('form')
+          form.method = 'POST'
+          form.action = data.data.paymentUrl
+          
+          // Add data field
+          const dataInput = document.createElement('input')
+          dataInput.type = 'hidden'
+          dataInput.name = 'data'
+          dataInput.value = data.data.paymentData
+          form.appendChild(dataInput)
+          
+          // Add signature field
+          const signatureInput = document.createElement('input')
+          signatureInput.type = 'hidden'
+          signatureInput.name = 'signature'
+          signatureInput.value = data.data.signature
+          form.appendChild(signatureInput)
+          
+          document.body.appendChild(form)
+          form.submit()
+        } else {
+          // Fallback to direct URL
+          window.location.href = data.data.paymentUrl
+        }
       } else {
         if (data.code === 'AUTH_REQUIRED') {
           setAuthModalTab('login')
