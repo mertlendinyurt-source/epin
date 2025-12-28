@@ -1013,11 +1013,8 @@ export default function App() {
                   <div
                     key={product.id}
                     onClick={() => handleProductSelect(product)}
-                    className="group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/40"
-                    style={{ 
-                      backgroundColor: '#1a1d24',
-                      aspectRatio: window.innerWidth < 768 ? '3/4.5' : '4/5'
-                    }}
+                    className="group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/40 aspect-[3/4.5] md:aspect-[4/5]"
+                    style={{ backgroundColor: '#1a1d24' }}
                   >
                     {/* Premium Badge */}
                     {product.discountPercent > 0 && (
