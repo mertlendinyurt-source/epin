@@ -2666,30 +2666,32 @@ export async function POST(request) {
         buyer_postcode: '34000',
         shipping_address_list: '',
         total_order_value: order.amount.toString(),
-        currency: 'TRY',
+        currency: '0', // 0 = TRY for Shopier
         platform: '0',
         is_in_frame: '0',
-        current_language: 'TR',
-        modul_version: 'API_v2.2',
-        apiKey: apiKey,
+        current_language: '0', // 0 = TR for Shopier
+        modul_version: '1.0.4',
+        api_key: apiKey,
         website_index: '1',
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payment/shopier/callback`,
-        back_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?orderId=${order.id}`,
       };
 
-      // Generate hash signature for request authentication
-      const hashData = `${merchantId}${randomNr}${order.amount}${order.id}`;
-      const signature = generateShopierHash(order.id, order.amount, apiSecret);
+      // Generate Shopier signature using correct method: JSON -> base64 -> HMAC-SHA256 -> base64
+      const crypto = require('crypto');
+      const jsonData = JSON.stringify(shopierPayload);
+      const base64Data = Buffer.from(jsonData).toString('base64');
+      const signature = crypto.createHmac('sha256', apiSecret)
+        .update(base64Data)
+        .digest('base64');
 
-      // For production Shopier, we use their payment page with form submission
-      // Create payment URL (Shopier iframe or redirect method)
-      const paymentUrl = `https://www.shopier.com/ShowProduct/api_pay4.php?${new URLSearchParams(shopierPayload).toString()}`;
+      // For production Shopier, we use their payment page with form POST
+      // Create payment URL and form data
+      const paymentUrl = 'https://www.shopier.com/ShowProduct/api_pay4.php';
 
       // Store payment request in database for audit trail
       await db.collection('payment_requests').insertOne({
         orderId: order.id,
-        shopierPayload: { ...shopierPayload, apiKey: '***MASKED***' }, // Never log sensitive data
-        signature,
+        shopierPayload: { ...shopierPayload, api_key: '***MASKED***' }, // Never log sensitive data
+        signature: '***MASKED***',
         createdAt: new Date()
       });
 
@@ -2697,7 +2699,9 @@ export async function POST(request) {
         success: true,
         data: {
           order,
-          paymentUrl
+          paymentUrl,
+          paymentData: base64Data,
+          signature
         }
       });
     }
