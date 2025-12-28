@@ -162,6 +162,11 @@ export default function AuthModal({ open, onClose, onSuccess, defaultTab = 'regi
         
         toast.success('Giriş başarılı!');
         
+        // GA4 login event
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'login', { method: 'email' });
+        }
+        
         // Clear form
         setLoginForm({ email: '', password: '' });
 
