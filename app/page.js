@@ -1017,58 +1017,37 @@ export default function App() {
                     style={{ backgroundColor: '#1c1f26' }}
                   >
                     {/* Info Icon - Top Right */}
-                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 flex items-center justify-center z-20">
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/40 flex items-center justify-center z-20">
                       <Info className="w-3 h-3 text-white/70" />
                     </div>
 
-                    {/* Image Section - Tall aspect ratio like plyr.com */}
-                    <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-[#2a2d35] to-[#1c1f26] flex items-center justify-center p-4">
+                    {/* Image Section - No padding, full cover */}
+                    <div className="relative aspect-[3/4] overflow-hidden">
                       <img 
                         src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=500&fit=crop"}
                         alt={product.title}
-                        className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         onError={(e) => {
                           e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=500&fit=crop";
                         }}
                       />
                     </div>
 
-                    {/* Content Section - Compact like plyr.com */}
-                    <div className="p-3 flex flex-col gap-1.5">
-                      {/* Platform Tag */}
-                      <div className="text-[10px] text-white/50 font-medium uppercase tracking-wider">
-                        MOBILE
-                      </div>
-                      
-                      {/* UC Amount */}
-                      <div className="text-sm md:text-base font-bold text-white">
-                        {product.ucAmount} UC
-                      </div>
-                      
-                      {/* Region */}
-                      <div className="flex items-center gap-1.5">
+                    {/* Content Section - Compact */}
+                    <div className="p-2.5 flex flex-col gap-0.5">
+                      <div className="text-[10px] text-white/50 font-medium uppercase">MOBILE</div>
+                      <div className="text-sm font-bold text-white">{product.ucAmount} UC</div>
+                      <div className="flex items-center gap-1">
                         <RegionDisplay regionCode={product.regionCode || 'TR'} size="sm" />
                       </div>
-                      
-                      {/* Availability */}
-                      <div className="text-[10px] text-emerald-400 font-medium">
-                        Bölgenizde kullanılabilir
-                      </div>
-                      
-                      {/* Price Section */}
-                      <div className="mt-1">
+                      <div className="text-[10px] text-emerald-400">Bölgenizde kullanılabilir</div>
+                      <div className="mt-0.5">
                         {product.discountPrice < product.price && (
-                          <div className="text-[11px] text-red-400 line-through">
-                            ₺ {product.price.toFixed(2)}
-                          </div>
+                          <div className="text-[10px] text-red-400 line-through">₺{product.price.toFixed(2)}</div>
                         )}
-                        <div className="text-base md:text-lg font-bold text-white">
-                          ₺ {product.discountPrice.toFixed(2)}
-                        </div>
+                        <div className="text-sm font-bold text-white">₺ {product.discountPrice.toFixed(2)}</div>
                         {product.discountPercent > 0 && (
-                          <div className="text-[10px] text-emerald-400">
-                            {product.discountPercent}% ▼ indirim
-                          </div>
+                          <div className="text-[10px] text-emerald-400">{product.discountPercent}% ▼ indirim</div>
                         )}
                       </div>
                     </div>
