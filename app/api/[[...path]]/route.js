@@ -3143,7 +3143,7 @@ export async function POST(request) {
         favicon: favicon !== undefined ? favicon : existingSettings?.favicon || null,
         heroImage: heroImage !== undefined ? heroImage : existingSettings?.heroImage || null,
         categoryIcon: categoryIcon !== undefined ? categoryIcon : existingSettings?.categoryIcon || null,
-        siteName: siteName !== undefined ? siteName.trim() : existingSettings?.siteName || 'PUBG UC Store',
+        siteName: siteName !== undefined ? siteName.trim() : existingSettings?.siteName || 'PINLY',
         metaTitle: metaTitle !== undefined ? metaTitle.trim() : existingSettings?.metaTitle || '',
         metaDescription: metaDescription !== undefined ? metaDescription.trim() : existingSettings?.metaDescription || '',
         contactEmail: contactEmail !== undefined ? contactEmail.trim() : existingSettings?.contactEmail || '',
