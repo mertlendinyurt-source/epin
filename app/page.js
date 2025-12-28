@@ -1013,41 +1013,41 @@ export default function App() {
                   <div
                     key={product.id}
                     onClick={() => handleProductSelect(product)}
-                    className="group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-black/50 flex flex-col border border-white/10 hover:border-white/20"
-                    style={{ backgroundColor: '#1c1f26' }}
+                    className="group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl flex flex-col border border-white/10 hover:border-white/20"
+                    style={{ backgroundColor: '#252a34' }}
                   >
-                    {/* Info Icon - Top Right */}
-                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/40 flex items-center justify-center z-20">
-                      <Info className="w-3 h-3 text-white/70" />
+                    {/* Info Icon - Top Right - White circle */}
+                    <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center z-20">
+                      <Info className="w-4 h-4 text-gray-700" />
                     </div>
 
-                    {/* Image Section - No padding, full cover */}
-                    <div className="relative aspect-[3/4] overflow-hidden">
+                    {/* Image Section - Square, centered, with padding */}
+                    <div className="relative aspect-square bg-gradient-to-b from-[#2d3444] to-[#252a34] flex items-center justify-center p-6">
                       <img 
-                        src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=500&fit=crop"}
+                        src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=400&fit=crop"}
                         alt={product.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
                         onError={(e) => {
-                          e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=500&fit=crop";
+                          e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=400&fit=crop";
                         }}
                       />
                     </div>
 
-                    {/* Content Section - Compact */}
-                    <div className="p-2.5 flex flex-col gap-0.5">
-                      <div className="text-[10px] text-white/50 font-medium uppercase">MOBILE</div>
-                      <div className="text-sm font-bold text-white">{product.ucAmount} UC</div>
-                      <div className="flex items-center gap-1">
+                    {/* Content Section */}
+                    <div className="p-3 flex flex-col gap-1">
+                      <div className="text-[11px] text-white/60 font-medium uppercase">MOBİLE</div>
+                      <div className="text-base font-bold text-white">{product.ucAmount} UC</div>
+                      <div className="flex items-center gap-1.5 mt-1">
                         <RegionDisplay regionCode={product.regionCode || 'TR'} size="sm" />
                       </div>
-                      <div className="text-[10px] text-emerald-400">Bölgenizde kullanılabilir</div>
-                      <div className="mt-0.5">
+                      <div className="text-[11px] text-emerald-400 mt-0.5">Bölgenizde kullanılabilir</div>
+                      <div className="mt-1.5">
                         {product.discountPrice < product.price && (
-                          <div className="text-[10px] text-red-400 line-through">₺{product.price.toFixed(2)}</div>
+                          <div className="text-[11px] text-red-500 line-through">₺{product.price.toFixed(2).replace('.', ',')}</div>
                         )}
-                        <div className="text-sm font-bold text-white">₺ {product.discountPrice.toFixed(2)}</div>
+                        <div className="text-lg font-bold text-white">₺ {product.discountPrice.toFixed(2).replace('.', ',')}</div>
                         {product.discountPercent > 0 && (
-                          <div className="text-[10px] text-emerald-400">{product.discountPercent}% ▼ indirim</div>
+                          <div className="text-[11px] text-emerald-400">{product.discountPercent.toFixed(1).replace('.', ',')}% ▼ indirim</div>
                         )}
                       </div>
                     </div>
