@@ -438,7 +438,7 @@ async function sendEmail(db, type, to, content, userId, orderId = null, ticketId
     
     const html = generateEmailTemplate(content, {
       logoUrl: siteSettings?.logoUrl,
-      siteName: siteSettings?.siteName || 'PUBG UC Store'
+      siteName: siteSettings?.siteName || 'PINLY'
     });
     
     await transporter.sendMail({
@@ -2258,7 +2258,7 @@ export async function POST(request) {
 
         const html = generateEmailTemplate(testContent, {
           logoUrl: siteSettings?.logoUrl,
-          siteName: siteSettings?.siteName || 'PUBG UC Store'
+          siteName: siteSettings?.siteName || 'PINLY'
         });
 
         await transporter.sendMail({
