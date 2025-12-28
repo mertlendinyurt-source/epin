@@ -1380,9 +1380,35 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .toArray();
 
+      // Transform orders - hide risk details, show user-friendly message
+      const userOrders = orders.map(order => {
+        const userOrder = { ...order };
+        
+        // Hide internal risk data from users
+        delete userOrder.risk;
+        delete userOrder.meta;
+        
+        // Show user-friendly delivery status
+        if (order.delivery?.status === 'hold') {
+          userOrder.userDeliveryStatus = 'review';
+          userOrder.userDeliveryMessage = 'Siparişiniz kontrol aşamasındadır. En kısa sürede sonuçlandırılacaktır.';
+        } else if (order.delivery?.status === 'pending') {
+          userOrder.userDeliveryStatus = 'pending';
+          userOrder.userDeliveryMessage = 'Siparişiniz hazırlanıyor.';
+        } else if (order.delivery?.status === 'delivered') {
+          userOrder.userDeliveryStatus = 'delivered';
+          userOrder.userDeliveryMessage = 'Siparişiniz teslim edildi.';
+        } else if (order.delivery?.status === 'cancelled') {
+          userOrder.userDeliveryStatus = 'cancelled';
+          userOrder.userDeliveryMessage = 'Sipariş iptal edildi / iade yapıldı.';
+        }
+        
+        return userOrder;
+      });
+
       return NextResponse.json({
         success: true,
-        data: orders
+        data: userOrders
       });
     }
 
