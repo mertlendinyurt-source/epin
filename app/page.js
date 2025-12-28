@@ -665,7 +665,7 @@ export default function App() {
                   UC
                 </div>
                 <span className="text-white font-semibold text-base md:text-lg">
-                  {siteSettings?.siteName || 'PUBG UC'}
+                  {siteSettings?.siteName || 'PINLY'}
                 </span>
               </>
             )}
