@@ -819,7 +819,7 @@ export async function GET(request) {
 
     // Root endpoint
     if (pathname === '/api' || pathname === '/api/') {
-      return NextResponse.json({ message: 'PUBG UC Store API v1.0', status: 'ok', version: APP_VERSION });
+      return NextResponse.json({ message: 'PINLY API v1.0', status: 'ok', version: APP_VERSION });
     }
 
     // Rate limiting for GET endpoints
