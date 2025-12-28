@@ -518,9 +518,10 @@ export default function App() {
   }
 
   // Region display component - shows flag + name from regions data
-  const RegionDisplay = ({ regionCode = 'TR', size = 'sm' }) => {
+  const RegionDisplay = ({ regionCode = 'TR', size = 'sm', showWhiteText = false }) => {
     const region = regions.find(r => r.code === regionCode) || { code: regionCode, name: regionCode === 'TR' ? 'Türkiye' : regionCode, flagImageUrl: null }
     const flagSize = size === 'lg' ? 'w-[18px] h-[14px]' : 'w-4 h-3'
+    const textColor = showWhiteText ? 'text-white' : ''
     
     return (
       <div className="flex items-center gap-1.5">
@@ -536,7 +537,7 @@ export default function App() {
           />
         ) : null}
         {!region.flagImageUrl && <FlagBadge code={region.code} size={size} />}
-        <span>{region.name?.toUpperCase()}</span>
+        <span className={textColor}>{region.name?.toUpperCase()}</span>
       </div>
     )
   }
