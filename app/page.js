@@ -257,6 +257,72 @@ export default function App() {
     }
   }
 
+  // Load SEO settings and inject GA4 script
+  const loadSEOSettings = async () => {
+    try {
+      const response = await fetch('/api/seo/settings')
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        // Inject GA4 if measurement ID exists
+        if (data.data.ga4MeasurementId) {
+          injectGA4Script(data.data.ga4MeasurementId)
+        }
+        
+        // Inject GSC verification meta tag
+        if (data.data.gscVerificationCode) {
+          injectGSCMetaTag(data.data.gscVerificationCode)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading SEO settings:', error)
+    }
+  }
+
+  // Inject Google Analytics 4 script
+  const injectGA4Script = (measurementId) => {
+    if (document.querySelector(`script[src*="${measurementId}"]`)) return // Already loaded
+    
+    // Load gtag.js
+    const gtagScript = document.createElement('script')
+    gtagScript.async = true
+    gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
+    document.head.appendChild(gtagScript)
+
+    // Initialize gtag
+    const initScript = document.createElement('script')
+    initScript.innerHTML = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${measurementId}', {
+        page_title: document.title,
+        page_location: window.location.href
+      });
+    `
+    document.head.appendChild(initScript)
+
+    // Make gtag globally available for events
+    window.gtag = window.gtag || function(){(window.dataLayer = window.dataLayer || []).push(arguments)}
+  }
+
+  // Inject Google Search Console verification meta tag
+  const injectGSCMetaTag = (verificationCode) => {
+    if (document.querySelector('meta[name="google-site-verification"]')) return // Already exists
+    
+    const meta = document.createElement('meta')
+    meta.name = 'google-site-verification'
+    meta.content = verificationCode
+    document.head.appendChild(meta)
+  }
+
+  // GA4 Event tracking helper
+  const trackEvent = (eventName, eventParams = {}) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', eventName, eventParams)
+    }
+  }
+
   const fetchGameContent = async () => {
     try {
       const response = await fetch('/api/content/pubg')
