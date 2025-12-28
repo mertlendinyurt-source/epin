@@ -305,7 +305,7 @@ async function logEmail(db, type, userId, to, status, orderId = null, ticketId =
 // Premium HTML Email Template Generator
 function generateEmailTemplate(content, settings = {}) {
   const logoUrl = settings.logoUrl || `${BASE_URL}/logo.png`;
-  const siteName = settings.siteName || 'PUBG UC Store';
+  const siteName = settings.siteName || 'PINLY';
   
   return `
 <!DOCTYPE html>
