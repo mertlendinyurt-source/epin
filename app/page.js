@@ -1013,47 +1013,74 @@ export default function App() {
                   <div
                     key={product.id}
                     onClick={() => handleProductSelect(product)}
-                    className="group relative rounded overflow-hidden cursor-pointer transition-all hover:shadow-lg"
-                    style={{ backgroundColor: '#252525' }}
+                    className="group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/40"
+                    style={{ 
+                      backgroundColor: '#1a1d24',
+                      aspectRatio: window.innerWidth < 768 ? '3/4.5' : '4/5'
+                    }}
                   >
-                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-white/20 flex items-center justify-center z-10">
-                      <Info className="w-2.5 h-2.5 text-white" />
+                    {/* Premium Badge */}
+                    {product.discountPercent > 0 && (
+                      <div className="absolute top-2 left-2 z-20 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full shadow-lg">
+                        %{product.discountPercent} İNDİRİM
+                      </div>
+                    )}
+                    
+                    {/* Info Icon */}
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Info className="w-3.5 h-3.5 text-white" />
                     </div>
 
-                    <div className="relative h-36 md:h-40 overflow-hidden flex items-center justify-center bg-gradient-to-br from-zinc-900/30 to-zinc-950/30 p-3">
+                    {/* Image Section - 65-70% of card height */}
+                    <div className="relative h-[65%] overflow-hidden">
                       <img 
-                        src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=200&h=200&fit=crop"}
+                        src={product.imageUrl || "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=500&fit=crop"}
                         alt={product.title}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={(e) => {
-                          e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=200&h=200&fit=crop";
+                          e.target.src = "https://images.unsplash.com/photo-1645690364326-1f80098eca66?w=400&h=500&fit=crop";
                         }}
                       />
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1a1d24] via-transparent to-transparent opacity-60" />
                     </div>
 
-                    <div className="p-3">
-                      <div className="text-[11px] text-white/70 font-bold uppercase mb-1">MOBILE</div>
-                      <div className="text-base md:text-[18px] font-bold text-white mb-2">
-                        {product.ucAmount} UC
-                      </div>
-                      <div className="flex items-center gap-1 text-[11px] md:text-xs font-bold text-white mb-0.5">
-                        <RegionDisplay regionCode={product.regionCode || 'TR'} size="sm" />
-                      </div>
-                      <div className="text-[10px] text-[#32CD32] mb-2">Bölgenizde kullanılabilir</div>
+                    {/* Content Section - 30-35% of card height */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[35%] p-3 md:p-4 flex flex-col justify-between bg-gradient-to-t from-[#1a1d24] to-[#1a1d24]/95">
+                      {/* Product Info */}
                       <div>
-                        {product.discountPrice < product.price && (
-                          <div className="text-[12px] md:text-[13px] text-[#B22222] line-through mb-0.5">
-                            ₺ {product.price.toFixed(2)}
-                          </div>
-                        )}
-                        <div className="text-base md:text-[18px] font-bold text-white mb-0.5">
-                          ₺ {product.discountPrice.toFixed(2)}
+                        <div className="text-[10px] md:text-[11px] text-blue-400 font-semibold uppercase tracking-wider mb-0.5">
+                          MOBILE
                         </div>
-                        {product.discountPercent > 0 && (
-                          <div className="text-[10px] md:text-[11px] text-[#32CD32]">
-                            {product.discountPercent}% indirim
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight mb-1.5">
+                          {product.ucAmount} UC
+                        </div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <RegionDisplay regionCode={product.regionCode || 'TR'} size="sm" />
+                          <span className="text-[9px] md:text-[10px] text-emerald-400 font-medium">
+                            Bölgenizde kullanılabilir
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Price Section */}
+                      <div className="flex items-end justify-between">
+                        <div>
+                          {product.discountPrice < product.price && (
+                            <div className="text-[11px] md:text-xs text-white/40 line-through">
+                              ₺ {product.price.toFixed(2)}
+                            </div>
+                          )}
+                          <div className="text-base md:text-xl font-bold text-white">
+                            ₺ {product.discountPrice.toFixed(2)}
                           </div>
-                        )}
+                        </div>
+                        {/* Buy Button Indicator */}
+                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                          <svg className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </div>
